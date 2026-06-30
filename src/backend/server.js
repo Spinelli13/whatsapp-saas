@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 
 const { PORT, NODE_ENV, FRONTEND_URL } = require('./config/environment');
+const { sequelize } = require('./models');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -49,8 +50,19 @@ io.on('connection', (socket) => {
 
 app.set('io', io);
 
-httpServer.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT} [${NODE_ENV}]`);
-});
+async function start() {
+  try {
+    await sequelize.authenticate();
+    console.log('Banco de dados conectado');
+  } catch (err) {
+    console.warn(`Banco indisponível: ${err.message}`);
+  }
+
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT} [${NODE_ENV}]`);
+  });
+}
+
+start();
 
 module.exports = { app, httpServer, io };
