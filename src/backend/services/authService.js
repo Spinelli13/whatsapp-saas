@@ -1,9 +1,40 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { Usuario, Cliente } = require('../models');
-const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/environment');
+const { JWT_SECRET, JWT_EXPIRES_IN, NODE_ENV } = require('../config/environment');
 
 const BCRYPT_ROUNDS = 10;
+
+// Usuários fictícios usados apenas em desenvolvimento (sem banco)
+const MOCK_USERS = [
+  {
+    id: 1,
+    nome: 'Admin Cliente 1',
+    email: 'admin@cliente1.com',
+    senha: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+    role: 'admin',
+    cliente_id: 1,
+    status: 'ativo',
+  },
+  {
+    id: 2,
+    nome: 'Atendente Cliente 1',
+    email: 'atendente@cliente1.com',
+    senha: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+    role: 'atendente',
+    cliente_id: 1,
+    status: 'ativo',
+  },
+  {
+    id: 3,
+    nome: 'Admin Barcos',
+    email: 'admin@barcos.com',
+    senha: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+    role: 'admin',
+    cliente_id: 2,
+    status: 'ativo',
+  },
+];
 
 async function register({ nome, email, senha, cliente_id, role = 'atendente' }) {
   if (!senha || senha.length < 6) {
@@ -83,4 +114,33 @@ function _payload(usuario) {
   };
 }
 
-module.exports = { register, login, validarToken };
+async function loginMock({ email, senha }) {
+  if (NODE_ENV === 'production') {
+    const err = new Error('Endpoint indisponível em produção');
+    err.status = 404;
+    throw err;
+  }
+
+  const usuario = MOCK_USERS.find((u) => u.email === email);
+
+  if (!usuario || !(await bcrypt.compare(senha, usuario.senha))) {
+    const err = new Error('Credenciais inválidas (mock)');
+    err.status = 401;
+    throw err;
+  }
+
+  const token = jwt.sign(
+    {
+      id: usuario.id,
+      email: usuario.email,
+      cliente_id: usuario.cliente_id,
+      role: usuario.role,
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+
+  return { token, usuario: _payload(usuario), mock: true };
+}
+
+module.exports = { register, login, loginMock, validarToken };
