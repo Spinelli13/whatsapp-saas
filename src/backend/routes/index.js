@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const authRoutes = require('./auth');
+const whatsappRoutes = require('./whatsapp');
 
 const router = Router();
 
@@ -8,5 +9,6 @@ router.get('/status', (req, res) => {
 });
 
 router.use('/auth', authRoutes);
+router.use('/whatsapp', whatsappRoutes);
 
 module.exports = router;

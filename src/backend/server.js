@@ -8,6 +8,7 @@ const morgan = require('morgan');
 
 const { PORT, NODE_ENV, FRONTEND_URL } = require('./config/environment');
 const { sequelize } = require('./models');
+const whatsappService = require('./services/whatsappService');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -49,6 +50,7 @@ io.on('connection', (socket) => {
 });
 
 app.set('io', io);
+whatsappService.setIO(io);
 
 async function start() {
   try {
