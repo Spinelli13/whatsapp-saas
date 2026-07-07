@@ -1,140 +1,147 @@
-const { randomUUID } = require('crypto');
+const { Op } = require('sequelize');
+const { FilaMensagem } = require('../models');
 const departamentoService = require('./departamentoService');
 
-// TODO FASE 2.3: Migrar estado em memória para PostgreSQL:
-//   _filas    → tabela fila_mensagens (id, cliente_id, departamento_id, telefone, texto, status, atendente_id, created_at, updated_at)
-//   _estados  → tabela conversas      (id, cliente_id, telefone, estado, departamento_id, updated_at)
-// Ao migrar: substituir as funções _get/_set abaixo por queries Sequelize, manter assinaturas públicas.
-
-// filas[clienteId][departamentoId] = [EntradaFila]
-const _filas = {};
-
-// _estados[`${clienteId}:${telefone}`] = { estado, departamento, atualizadoEm }
-// estado: 'menu_enviado' | 'na_fila' | 'atribuido' | 'fechado'
+// Estado em memória apenas para a fase transitória "menu enviado, aguardando escolha".
+// Se o servidor reiniciar, o pior caso é o usuário receber o menu novamente.
+// TODO: Persistir em tabela 'conversas' caso necessário em versões futuras.
 const _estados = {};
 
-// ── Helpers internos ──────────────────────────────────────────
-
-function _filaCliente(clienteId) {
-  if (!_filas[clienteId]) _filas[clienteId] = {};
-  return _filas[clienteId];
-}
-
-function _chaveEstado(clienteId, telefone) {
+function _chave(clienteId, telefone) {
   return `${clienteId}:${telefone}`;
 }
 
 function _getEstado(clienteId, telefone) {
-  return _estados[_chaveEstado(clienteId, telefone)] || null;
+  return _estados[_chave(clienteId, telefone)] || null;
 }
 
-function _setEstado(clienteId, telefone, estado, departamento = null) {
-  _estados[_chaveEstado(clienteId, telefone)] = {
-    estado,
-    departamento,
-    atualizadoEm: new Date().toISOString(),
-  };
+function _setEstado(clienteId, telefone, estado, departamento_id = null) {
+  _estados[_chave(clienteId, telefone)] = { estado, departamento_id, em: new Date().toISOString() };
 }
 
-function _montarMenu(clienteId) {
-  const depts = departamentoService.listarDepartamentos(clienteId);
-  const linhas = depts.map((d, i) => `${i + 1}. ${d.emoji} ${d.nome}`);
+async function _montarMenu(clienteId) {
+  const depts = await departamentoService.listarDepartamentos(clienteId);
+  const linhas = depts.map((d, i) => `${i + 1}. ${d.emoji || ''} ${d.nome}`.trim());
   return `Olá! Como podemos ajudar?\n\n${linhas.join('\n')}\n\nDigite o número da opção desejada.`;
 }
 
-// ── Funções públicas ──────────────────────────────────────────
+async function _enfileirar(clienteId, departamentoId, telefone, texto) {
+  const entrada = await FilaMensagem.create({
+    cliente_id: clienteId,
+    departamento_id: departamentoId,
+    telefone,
+    texto,
+    status: 'aguardando',
+  });
 
-/**
- * Processa mensagem recebida do WhatsApp.
- * Retorna { acao, resposta, departamento?, posicao? }
- * resposta = null quando a mensagem deve ir ao atendente (não auto-responder)
- */
-function receberMensagem(clienteId, telefone, texto) {
-  const estado = _getEstado(clienteId, telefone);
-  const textoLimpo = (texto || '').trim();
+  const posicao = await FilaMensagem.count({
+    where: { cliente_id: clienteId, departamento_id: departamentoId, status: 'aguardando' },
+  });
 
-  if (!estado || estado.estado === 'fechado') {
+  return { entrada, posicao };
+}
+
+// ── API pública ───────────────────────────────────────────────
+
+async function receberMensagem(clienteId, telefone, texto) {
+  // Verifica se já existe entrada ativa no banco
+  const ativa = await FilaMensagem.findOne({
+    where: {
+      cliente_id: clienteId,
+      telefone,
+      status: { [Op.in]: ['aguardando', 'atribuido'] },
+    },
+    order: [['created_at', 'DESC']],
+  });
+
+  const mem = _getEstado(clienteId, telefone);
+
+  // Nenhuma entrada ativa e nenhum menu pendente → enviar menu
+  if (!ativa && (!mem || mem.estado === 'fechado')) {
     _setEstado(clienteId, telefone, 'menu_enviado');
-    return { acao: 'menu', resposta: _montarMenu(clienteId) };
+    return { acao: 'menu', resposta: await _montarMenu(clienteId) };
   }
 
-  if (estado.estado === 'menu_enviado') {
-    const depto = departamentoService.departamentoPorIndice(clienteId, textoLimpo);
+  // Menu foi enviado, processando escolha
+  if (!ativa && mem?.estado === 'menu_enviado') {
+    const depto = await departamentoService.departamentoPorIndice(clienteId, (texto || '').trim());
 
     if (!depto) {
-      const total = departamentoService.listarDepartamentos(clienteId).length;
+      const total = (await departamentoService.listarDepartamentos(clienteId)).length;
+      const menu = await _montarMenu(clienteId);
       return {
         acao: 'opcao_invalida',
-        resposta: `Opção inválida. Por favor, digite um número de 1 a ${total}.\n\n${_montarMenu(clienteId)}`,
+        resposta: `Opção inválida. Digite um número de 1 a ${total}.\n\n${menu}`,
       };
     }
 
-    const posicao = _enfileirar(clienteId, depto.id, telefone, textoLimpo);
+    const { posicao } = await _enfileirar(clienteId, depto.id, telefone, texto);
     _setEstado(clienteId, telefone, 'na_fila', depto.id);
 
     return {
       acao: 'enfileirado',
-      departamento: depto,
+      departamento: { id: depto.id, nome: depto.nome, emoji: depto.emoji },
       posicao,
       resposta: `✅ Você entrou na fila de *${depto.nome}*.\nSua posição: *${posicao}º*\n\nAguarde, um atendente irá te chamar em breve. 🙏`,
     };
   }
 
-  if (estado.estado === 'na_fila') {
-    const fila = _filaCliente(clienteId)[estado.departamento] || [];
-    const posicao = fila.findIndex((m) => m.telefone === telefone && m.status === 'aguardando') + 1;
+  // Já na fila (aguardando)
+  if (ativa?.status === 'aguardando') {
+    const posicao = await FilaMensagem.count({
+      where: {
+        cliente_id: clienteId,
+        departamento_id: ativa.departamento_id,
+        status: 'aguardando',
+        created_at: { [Op.lte]: ativa.created_at },
+      },
+    });
     return {
       acao: 'ja_na_fila',
-      resposta: `Você já está na fila de *${estado.departamento}*. Posição: *${posicao || '?'}º*\n\nAguarde um atendente. 😊`,
+      resposta: `Você já está na fila. Posição: *${posicao}º*\n\nAguarde um atendente. 😊`,
     };
   }
 
-  if (estado.estado === 'atribuido') {
-    // Mensagem encaminhada ao atendente via Socket.io — sem auto-resposta
-    return { acao: 'encaminhar_atendente', departamento: estado.departamento, resposta: null };
+  // Atribuído a atendente → não auto-responder
+  if (ativa?.status === 'atribuido') {
+    return { acao: 'encaminhar_atendente', departamento_id: ativa.departamento_id, resposta: null };
   }
 
-  // Fallback inesperado → reinicia fluxo
+  // Fallback
   _setEstado(clienteId, telefone, 'menu_enviado');
-  return { acao: 'menu', resposta: _montarMenu(clienteId) };
+  return { acao: 'menu', resposta: await _montarMenu(clienteId) };
 }
 
-function _enfileirar(clienteId, departamentoId, telefone, texto) {
-  const filaCliente = _filaCliente(clienteId);
-  if (!filaCliente[departamentoId]) filaCliente[departamentoId] = [];
-
-  filaCliente[departamentoId].push({
-    id: randomUUID(),
-    clienteId,
-    telefone,
-    departamento: departamentoId,
-    texto,
-    status: 'aguardando',
-    timestamp: new Date().toISOString(),
-    atendente_id: null,
-  });
-
-  return filaCliente[departamentoId].filter((m) => m.status === 'aguardando').length;
-}
-
-/** Enfileirar manualmente (chamado da rota POST /fila/escolher-departamento) */
-function enfileirar(clienteId, departamentoId, telefone, texto) {
-  const posicao = _enfileirar(clienteId, departamentoId, telefone, texto);
+async function enfileirar(clienteId, departamentoId, telefone, texto) {
+  const { posicao } = await _enfileirar(clienteId, departamentoId, telefone, texto);
   _setEstado(clienteId, telefone, 'na_fila', departamentoId);
   return posicao;
 }
 
-/** Retorna fila de um departamento ou objeto completo {depto: []} do cliente */
-function obterFila(clienteId, departamentoId = null) {
-  const filaCliente = _filaCliente(clienteId);
-  if (departamentoId) return filaCliente[departamentoId] || [];
-  return filaCliente;
+async function obterFila(clienteId, departamentoId = null) {
+  const where = { cliente_id: clienteId };
+  if (departamentoId) where.departamento_id = departamentoId;
+
+  const registros = await FilaMensagem.findAll({
+    where,
+    order: [['created_at', 'ASC']],
+  });
+
+  if (departamentoId) return registros;
+
+  // Agrupa por departamento_id quando não há filtro
+  return registros.reduce((acc, r) => {
+    const key = r.departamento_id;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(r);
+    return acc;
+  }, {});
 }
 
-/** Atribui atendente a uma entrada da fila */
-function atribuirAtendente(clienteId, departamentoId, mensagemId, atendenteId) {
-  const fila = _filaCliente(clienteId)[departamentoId] || [];
-  const entrada = fila.find((m) => m.id === mensagemId);
+async function atribuirAtendente(clienteId, departamentoId, mensagemId, atendenteId) {
+  const entrada = await FilaMensagem.findOne({
+    where: { id: mensagemId, cliente_id: clienteId, departamento_id: departamentoId },
+  });
 
   if (!entrada) {
     const err = new Error('Entrada não encontrada na fila');
@@ -142,17 +149,16 @@ function atribuirAtendente(clienteId, departamentoId, mensagemId, atendenteId) {
     throw err;
   }
 
-  entrada.status = 'atribuido';
-  entrada.atendente_id = atendenteId;
+  await entrada.update({ status: 'atribuido', atendente_id: atendenteId });
   _setEstado(clienteId, entrada.telefone, 'atribuido', departamentoId);
 
   return entrada;
 }
 
-/** Fecha conversa e remove da fila ativa */
-function fecharConversa(clienteId, departamentoId, mensagemId) {
-  const fila = _filaCliente(clienteId)[departamentoId] || [];
-  const entrada = fila.find((m) => m.id === mensagemId);
+async function fecharConversa(clienteId, departamentoId, mensagemId) {
+  const entrada = await FilaMensagem.findOne({
+    where: { id: mensagemId, cliente_id: clienteId, departamento_id: departamentoId },
+  });
 
   if (!entrada) {
     const err = new Error('Entrada não encontrada na fila');
@@ -160,7 +166,7 @@ function fecharConversa(clienteId, departamentoId, mensagemId) {
     throw err;
   }
 
-  entrada.status = 'fechado';
+  await entrada.update({ status: 'fechado' });
   _setEstado(clienteId, entrada.telefone, 'fechado', departamentoId);
 
   return entrada;
@@ -170,19 +176,21 @@ function obterEstado(clienteId, telefone) {
   return _getEstado(clienteId, telefone);
 }
 
-/** Resumo por departamento: total / aguardando / atribuido / fechado */
-function statusGeral(clienteId) {
-  const filaCliente = _filaCliente(clienteId);
-  const resultado = {};
-  for (const [dept, fila] of Object.entries(filaCliente)) {
-    resultado[dept] = {
-      total: fila.length,
-      aguardando: fila.filter((m) => m.status === 'aguardando').length,
-      atribuido:  fila.filter((m) => m.status === 'atribuido').length,
-      fechado:    fila.filter((m) => m.status === 'fechado').length,
-    };
-  }
-  return resultado;
+async function statusGeral(clienteId) {
+  const registros = await FilaMensagem.findAll({
+    where: { cliente_id: clienteId },
+    attributes: ['departamento_id', 'status'],
+    raw: true,
+  });
+
+  return registros.reduce((acc, r) => {
+    if (!acc[r.departamento_id]) {
+      acc[r.departamento_id] = { total: 0, aguardando: 0, atribuido: 0, fechado: 0 };
+    }
+    acc[r.departamento_id].total++;
+    acc[r.departamento_id][r.status]++;
+    return acc;
+  }, {});
 }
 
 module.exports = {

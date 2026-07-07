@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: whatsapp_saas
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - whatsapp_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/whatsapp_saas
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_troque_em_producao}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    volumes:
+      - ./whatsapp-sessions:/app/whatsapp-sessions
+    command: sh -c "npm run db:migrate && npm run db:seed && node src/backend/server.js"
+    networks:
+      - whatsapp_net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  whatsapp_net:
+    driver: bridge

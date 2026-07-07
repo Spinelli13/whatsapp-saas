@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../config/database');
+const sequelize = require('../config/sequelize');
 
 class Usuario extends Model {}
 
@@ -22,24 +22,16 @@ Usuario.init(
     senha: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      validate: {
-        notEmpty: { msg: 'Senha é obrigatória' },
-      },
+      validate: { notEmpty: { msg: 'Senha é obrigatória' } },
     },
     nome: {
       type: DataTypes.STRING(150),
       allowNull: false,
-      validate: {
-        notEmpty: { msg: 'Nome é obrigatório' },
-      },
+      validate: { notEmpty: { msg: 'Nome é obrigatório' } },
     },
     cliente_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: 'clientes',
-        key: 'id',
-      },
     },
     role: {
       type: DataTypes.ENUM('admin', 'atendente'),

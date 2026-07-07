@@ -8,17 +8,19 @@ const router = Router();
 router.use(verificarJWT);
 
 // GET /api/fila/departamentos/:cliente_id
-// Lista departamentos disponíveis para o cliente
-router.get('/departamentos/:cliente_id', autorizarClienteId, (req, res) => {
-  const clienteId = parseInt(req.params.cliente_id, 10);
-  const departamentos = departamentoService.listarDepartamentos(clienteId);
-  res.json({ cliente_id: clienteId, departamentos });
+router.get('/departamentos/:cliente_id', autorizarClienteId, async (req, res, next) => {
+  try {
+    const clienteId = parseInt(req.params.cliente_id, 10);
+    const departamentos = await departamentoService.listarDepartamentos(clienteId);
+    res.json({ cliente_id: clienteId, departamentos });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // POST /api/fila/receber
-// Simula recebimento de mensagem pelo Baileys (também chamado internamente)
 // Body: { cliente_id, telefone, texto }
-router.post('/receber', (req, res, next) => {
+router.post('/receber', async (req, res, next) => {
   try {
     const { cliente_id, telefone, texto } = req.body;
 
@@ -31,9 +33,8 @@ router.post('/receber', (req, res, next) => {
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    const resultado = filaService.receberMensagem(clienteId, telefone, texto);
+    const resultado = await filaService.receberMensagem(clienteId, telefone, texto);
 
-    // Emitir evento Socket.io para painel em tempo real
     const io = req.app.get('io');
     if (io && resultado.acao === 'enfileirado') {
       io.to(`cliente_${clienteId}`).emit('fila:nova_entrada', {
@@ -50,9 +51,8 @@ router.post('/receber', (req, res, next) => {
 });
 
 // POST /api/fila/escolher-departamento
-// Enfileira manualmente (sem passar pelo menu de texto)
-// Body: { cliente_id, telefone, departamento_id }
-router.post('/escolher-departamento', (req, res, next) => {
+// Body: { cliente_id, telefone, departamento_id (integer) }
+router.post('/escolher-departamento', async (req, res, next) => {
   try {
     const { cliente_id, telefone, departamento_id } = req.body;
 
@@ -65,12 +65,12 @@ router.post('/escolher-departamento', (req, res, next) => {
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    const depto = departamentoService.validarDepartamento(clienteId, departamento_id);
+    const depto = await departamentoService.validarDepartamento(clienteId, parseInt(departamento_id, 10));
     if (!depto) {
       return res.status(400).json({ error: `Departamento '${departamento_id}' não encontrado` });
     }
 
-    const posicao = filaService.enfileirar(clienteId, departamento_id, telefone, '(entrada manual)');
+    const posicao = await filaService.enfileirar(clienteId, depto.id, telefone, '(entrada manual)');
 
     const io = req.app.get('io');
     if (io) {
@@ -83,20 +83,26 @@ router.post('/escolher-departamento', (req, res, next) => {
   }
 });
 
-// GET /api/fila/status/:cliente_id?departamento=vendas
-// Mostra fila atual (todos os departamentos ou um específico)
-router.get('/status/:cliente_id', autorizarClienteId, (req, res) => {
-  const clienteId = parseInt(req.params.cliente_id, 10);
-  const { departamento } = req.query;
-  const fila = filaService.obterFila(clienteId, departamento || null);
-  const resumo = filaService.statusGeral(clienteId);
-  res.json({ cliente_id: clienteId, resumo, fila });
+// GET /api/fila/status/:cliente_id?departamento=<id>
+router.get('/status/:cliente_id', autorizarClienteId, async (req, res, next) => {
+  try {
+    const clienteId = parseInt(req.params.cliente_id, 10);
+    const deptId = req.query.departamento ? parseInt(req.query.departamento, 10) : null;
+
+    const [fila, resumo] = await Promise.all([
+      filaService.obterFila(clienteId, deptId),
+      filaService.statusGeral(clienteId),
+    ]);
+
+    res.json({ cliente_id: clienteId, resumo, fila });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // POST /api/fila/atribuir
-// Atribui próximo da fila a um atendente
 // Body: { cliente_id, departamento_id, mensagem_id }
-router.post('/atribuir', (req, res, next) => {
+router.post('/atribuir', async (req, res, next) => {
   try {
     const { cliente_id, departamento_id, mensagem_id } = req.body;
 
@@ -109,7 +115,12 @@ router.post('/atribuir', (req, res, next) => {
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    const entrada = filaService.atribuirAtendente(clienteId, departamento_id, mensagem_id, req.usuario.id);
+    const entrada = await filaService.atribuirAtendente(
+      clienteId,
+      parseInt(departamento_id, 10),
+      mensagem_id,
+      req.usuario.id
+    );
 
     const io = req.app.get('io');
     if (io) {
@@ -123,9 +134,8 @@ router.post('/atribuir', (req, res, next) => {
 });
 
 // POST /api/fila/fechar
-// Fecha conversa
 // Body: { cliente_id, departamento_id, mensagem_id }
-router.post('/fechar', (req, res, next) => {
+router.post('/fechar', async (req, res, next) => {
   try {
     const { cliente_id, departamento_id, mensagem_id } = req.body;
 
@@ -138,7 +148,11 @@ router.post('/fechar', (req, res, next) => {
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    const entrada = filaService.fecharConversa(clienteId, departamento_id, mensagem_id);
+    const entrada = await filaService.fecharConversa(
+      clienteId,
+      parseInt(departamento_id, 10),
+      mensagem_id
+    );
 
     const io = req.app.get('io');
     if (io) {
