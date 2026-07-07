@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const qrcode = require('qrcode');
 const config = require('../config/whatsapp');
+const filaService = require('./filaService');
 
 // Estado em memória por cliente_id
 // { socket, status, qr, qrBase64, reconnectAttempts, messages[] }
@@ -126,7 +127,7 @@ async function conectar(clienteId) {
     }
   });
 
-  sock.ev.on('messages.upsert', ({ messages, type }) => {
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
 
     for (const msg of messages) {
@@ -142,6 +143,27 @@ async function conectar(clienteId) {
 
       _emit(clienteId, 'whatsapp:mensagem', mensagem);
       console.log(`[WA] Mensagem recebida | cliente=${clienteId} | de=${mensagem.de} | texto="${mensagem.texto}"`);
+
+      // Roteamento para fila de departamentos
+      if (mensagem.texto && mensagem.texto !== '[mídia]') {
+        try {
+          const resultado = filaService.receberMensagem(clienteId, mensagem.de, mensagem.texto);
+
+          if (resultado.acao === 'enfileirado') {
+            _emit(clienteId, 'fila:nova_entrada', {
+              telefone: mensagem.de,
+              departamento: resultado.departamento,
+              posicao: resultado.posicao,
+            });
+          }
+
+          if (resultado.resposta) {
+            await sock.sendMessage(mensagem.de, { text: resultado.resposta });
+          }
+        } catch (err) {
+          console.error(`[Fila] Erro ao processar mensagem do cliente ${clienteId}:`, err.message);
+        }
+      }
     }
   });
 
