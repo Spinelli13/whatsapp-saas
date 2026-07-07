@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Usuario, Cliente } = require('../models');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/environment');
