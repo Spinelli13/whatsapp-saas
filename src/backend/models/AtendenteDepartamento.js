@@ -27,7 +27,7 @@ AtendenteDepartamento.init(
   {
     sequelize,
     modelName: 'AtendenteDepartamento',
-    tableName: 'atendentes_departamentos',
+    tableName: 'atendente_departamentos',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: false,

@@ -59,7 +59,7 @@ async function receberMensagem(clienteId, telefone, texto) {
   // Nenhuma entrada ativa e nenhum menu pendente → enviar menu
   if (!ativa && (!mem || mem.estado === 'fechado')) {
     _setEstado(clienteId, telefone, 'menu_enviado');
-    return { acao: 'menu', resposta: await _montarMenu(clienteId) };
+    return { acao: 'menu_enviado', menu: await _montarMenu(clienteId) };
   }
 
   // Menu foi enviado, processando escolha
@@ -70,8 +70,8 @@ async function receberMensagem(clienteId, telefone, texto) {
       const total = (await departamentoService.listarDepartamentos(clienteId)).length;
       const menu = await _montarMenu(clienteId);
       return {
-        acao: 'opcao_invalida',
-        resposta: `Opção inválida. Digite um número de 1 a ${total}.\n\n${menu}`,
+        acao: 'menu_reenviado',
+        menu: `Opção inválida. Digite um número de 1 a ${total}.\n\n${menu}`,
       };
     }
 
@@ -79,7 +79,7 @@ async function receberMensagem(clienteId, telefone, texto) {
     _setEstado(clienteId, telefone, 'na_fila', depto.id);
 
     return {
-      acao: 'enfileirado',
+      acao: 'na_fila',
       departamento: { id: depto.id, nome: depto.nome, emoji: depto.emoji },
       posicao,
       resposta: `✅ Você entrou na fila de *${depto.nome}*.\nSua posição: *${posicao}º*\n\nAguarde, um atendente irá te chamar em breve. 🙏`,
@@ -109,7 +109,7 @@ async function receberMensagem(clienteId, telefone, texto) {
 
   // Fallback
   _setEstado(clienteId, telefone, 'menu_enviado');
-  return { acao: 'menu', resposta: await _montarMenu(clienteId) };
+  return { acao: 'menu_enviado', menu: await _montarMenu(clienteId) };
 }
 
 async function enfileirar(clienteId, departamentoId, telefone, texto) {
@@ -127,15 +127,7 @@ async function obterFila(clienteId, departamentoId = null) {
     order: [['created_at', 'ASC']],
   });
 
-  if (departamentoId) return registros;
-
-  // Agrupa por departamento_id quando não há filtro
-  return registros.reduce((acc, r) => {
-    const key = r.departamento_id;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(r);
-    return acc;
-  }, {});
+  return registros;
 }
 
 async function atribuirAtendente(clienteId, departamentoId, mensagemId, atendenteId) {

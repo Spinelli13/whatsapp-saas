@@ -12,7 +12,7 @@ router.get('/departamentos/:cliente_id', autorizarClienteId, async (req, res, ne
   try {
     const clienteId = parseInt(req.params.cliente_id, 10);
     const departamentos = await departamentoService.listarDepartamentos(clienteId);
-    res.json({ cliente_id: clienteId, departamentos });
+    res.json(departamentos);
   } catch (err) {
     next(err);
   }
@@ -36,7 +36,7 @@ router.post('/receber', async (req, res, next) => {
     const resultado = await filaService.receberMensagem(clienteId, telefone, texto);
 
     const io = req.app.get('io');
-    if (io && resultado.acao === 'enfileirado') {
+    if (io && resultado.acao === 'na_fila') {
       io.to(`cliente_${clienteId}`).emit('fila:nova_entrada', {
         telefone,
         departamento: resultado.departamento,
