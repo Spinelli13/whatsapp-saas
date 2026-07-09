@@ -18,11 +18,11 @@ module.exports = {
     );
 
     await queryInterface.sequelize.query(
-      "SELECT setval(pg_get_serial_sequence('atendentes_departamentos', 'id'), (SELECT MAX(id) FROM atendentes_departamentos))"
+      "SELECT setval(pg_get_serial_sequence('atendente_departamentos', 'id'), (SELECT MAX(id) FROM atendente_departamentos))"
     );
   },
 
   async down(queryInterface) {
-    await queryInterface.bulkDelete('atendentes_departamentos', { id: [1, 2, 3, 4] }, {});
+    await queryInterface.bulkDelete('atendente_departamentos', { id: [1, 2, 3, 4] }, {});
   },
 };
