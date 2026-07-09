@@ -6,17 +6,19 @@ const { sequelize } = require('../src/backend/models');
 const { CREDENTIALS, CLIENTE_IDS, DEPT_IDS, TELEFONES, TELEFONE_PATTERN } = require('./constants');
 const { loginUser, authHeaders } = require('./helpers/auth.helper');
 
-afterAll(async () => {
+async function limpeza() {
   await sequelize.query(
     `DELETE FROM fila_mensagens WHERE telefone LIKE :pattern`,
     { replacements: { pattern: TELEFONE_PATTERN } }
   );
-});
+}
 
 // ─── Fluxo 1: Cliente 1 — atendimento completo ───────────────────────────────
 describe('Integração — Fluxo completo Cliente 1', () => {
   let token;
   const telefone = TELEFONES.INT_FLOW1;
+
+  afterAll(limpeza);
 
   beforeAll(async () => {
     token = await loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha);
@@ -67,6 +69,8 @@ describe('Integração — Fluxo completo Cliente 1', () => {
 describe('Integração — Isolação Client 2 vs Client 1', () => {
   let tokenC2;
   const telefoneC2 = TELEFONES.INT_FLOW2;
+
+  afterAll(limpeza);
 
   beforeAll(async () => {
     tokenC2 = await loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha);
@@ -120,6 +124,8 @@ describe('Integração — Performance: 10 mensagens sequenciais (FIFO)', () => 
   const PREFIX = TELEFONES.INT_PERF;
   let token;
   const COUNT = 10;
+
+  afterAll(limpeza);
 
   beforeAll(async () => {
     token = await loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha);
