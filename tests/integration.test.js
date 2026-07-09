@@ -6,7 +6,7 @@ const { sequelize } = require('../src/backend/models');
 const { CREDENTIALS, CLIENTE_IDS, DEPT_IDS, TELEFONES, TELEFONE_PATTERN } = require('./constants');
 const { loginUser, authHeaders } = require('./helpers/auth.helper');
 
-afterEach(async () => {
+afterAll(async () => {
   await sequelize.query(
     `DELETE FROM fila_mensagens WHERE telefone LIKE :pattern`,
     { replacements: { pattern: TELEFONE_PATTERN } }
