@@ -4,7 +4,7 @@ module.exports = {
   async up(queryInterface) {
     const now = new Date();
     await queryInterface.bulkInsert(
-      'atendentes_departamentos',
+      'atendente_departamentos',
       [
         // Ana (id=2) → Vendas (1) + Suporte (2) do cliente 1
         { id: 1, usuario_id: 2, departamento_id: 1, status: 'ativo', created_at: now },
