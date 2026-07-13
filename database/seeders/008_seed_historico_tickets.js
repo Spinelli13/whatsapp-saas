@@ -1,7 +1,7 @@
 'use strict';
 
-const TICKET_1 = '11111111-1111-4111-8111-111111111111';
-const TICKET_2 = '22222222-2222-4222-8222-222222222222';
+const TICKET_1  = '11111111-1111-4111-8111-111111111111';
+const TICKET_2  = '22222222-2222-4222-8222-222222222222';
 const TICKET_C2 = '33333333-3333-4333-8333-333333333333';
 
 module.exports = {
@@ -14,7 +14,7 @@ module.exports = {
       [
         // TICKET_1 — criado → respondendo
         {
-          id: '11111111-hist-4000-8000-000000000001',
+          id: '10000001-0001-4000-8000-000000000001',
           ticket_id: TICKET_1,
           usuario_id: null,
           acao: 'criado',
@@ -23,7 +23,7 @@ module.exports = {
           criado_em: t(48),
         },
         {
-          id: '11111111-hist-4000-8000-000000000002',
+          id: '10000001-0001-4000-8000-000000000002',
           ticket_id: TICKET_1,
           usuario_id: 2,
           acao: 'status_alterado',
@@ -32,7 +32,7 @@ module.exports = {
           criado_em: t(24),
         },
         {
-          id: '11111111-hist-4000-8000-000000000003',
+          id: '10000001-0001-4000-8000-000000000003',
           ticket_id: TICKET_1,
           usuario_id: 2,
           acao: 'nota_adicionada',
@@ -42,7 +42,7 @@ module.exports = {
         },
         // TICKET_2 — criado → respondendo → resolvido
         {
-          id: '22222222-hist-4000-8000-000000000001',
+          id: '20000002-0002-4000-8000-000000000001',
           ticket_id: TICKET_2,
           usuario_id: null,
           acao: 'criado',
@@ -51,7 +51,7 @@ module.exports = {
           criado_em: t(49),
         },
         {
-          id: '22222222-hist-4000-8000-000000000002',
+          id: '20000002-0002-4000-8000-000000000002',
           ticket_id: TICKET_2,
           usuario_id: 3,
           acao: 'status_alterado',
@@ -60,7 +60,7 @@ module.exports = {
           criado_em: t(48),
         },
         {
-          id: '22222222-hist-4000-8000-000000000003',
+          id: '20000002-0002-4000-8000-000000000003',
           ticket_id: TICKET_2,
           usuario_id: 3,
           acao: 'status_alterado',
@@ -69,7 +69,7 @@ module.exports = {
           criado_em: t(24),
         },
         {
-          id: '22222222-hist-4000-8000-000000000004',
+          id: '20000002-0002-4000-8000-000000000004',
           ticket_id: TICKET_2,
           usuario_id: null,
           acao: 'rating_adicionado',
@@ -79,7 +79,7 @@ module.exports = {
         },
         // TICKET_C2 — criado
         {
-          id: '33333333-hist-4000-8000-000000000001',
+          id: '30000003-0003-4000-8000-000000000001',
           ticket_id: TICKET_C2,
           usuario_id: null,
           acao: 'criado',
@@ -95,9 +95,7 @@ module.exports = {
   async down(queryInterface) {
     await queryInterface.bulkDelete(
       'historico_tickets',
-      {
-        ticket_id: [TICKET_1, TICKET_2, TICKET_C2],
-      },
+      { ticket_id: [TICKET_1, TICKET_2, TICKET_C2] },
       {}
     );
   },
