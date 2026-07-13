@@ -19,7 +19,11 @@
     "test": "jest --verbose --runInBand --forceExit",
     "test:watch": "jest --watch --runInBand",
     "test:coverage": "jest --coverage --runInBand --forceExit",
-    "test:e2e": "jest tests/integration.test.js --verbose --runInBand --forceExit"
+    "test:e2e": "jest tests/integration.test.js --verbose --runInBand --forceExit",
+    "frontend:install": "npm install --prefix src/frontend",
+    "frontend:dev": "npm run dev --prefix src/frontend",
+    "frontend:build": "npm run build --prefix src/frontend",
+    "frontend:test": "npm run test:run --prefix src/frontend"
   },
   "engines": {
     "node": ">=18.0.0"
