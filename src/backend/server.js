@@ -1,12 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
 const { PORT, NODE_ENV, FRONTEND_URL } = require('./config/environment');
+const { initializeSocket } = require('./config/socket');
 const { sequelize } = require('./models');
 const whatsappService = require('./services/whatsappService');
 const routes = require('./routes');
@@ -15,13 +15,8 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 const httpServer = http.createServer(app);
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: FRONTEND_URL,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
+// Initialize Socket.io with JWT auth + tenant namespaces
+const io = initializeSocket(httpServer);
 
 app.use(helmet());
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
@@ -32,6 +27,13 @@ if (NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
+// Expose io to route handlers via req.io and req.app.get('io')
+app.set('io', io);
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 app.use('/api', routes);
 
 app.get('/health', (req, res) => {
@@ -40,16 +42,6 @@ app.get('/health', (req, res) => {
 
 app.use(errorHandler);
 
-io.on('connection', (socket) => {
-  const clienteId = socket.handshake.auth?.cliente_id;
-  if (clienteId) {
-    socket.join(`cliente_${clienteId}`);
-  }
-
-  socket.on('disconnect', () => {});
-});
-
-app.set('io', io);
 whatsappService.setIO(io);
 
 async function start() {
@@ -62,6 +54,7 @@ async function start() {
 
   httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT} [${NODE_ENV}]`);
+    console.log(`Socket.io ready on ws://localhost:${PORT}`);
   });
 }
 

@@ -42,7 +42,7 @@ router.post('/receber', async (req, res, next) => {
 
     const io = req.app.get('io');
     if (io && resultado.acao === 'na_fila') {
-      io.to(`cliente_${clienteId}`).emit('fila:nova_entrada', {
+      io.of(`/cliente-${clienteId}`).emit('fila:nova_entrada', {
         telefone,
         ticket_id: resultado.ticket_id,
         departamento: resultado.departamento,
@@ -79,7 +79,7 @@ router.post('/escolher-departamento', async (req, res, next) => {
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`cliente_${clienteId}`).emit('fila:nova_entrada', { telefone, departamento: depto, posicao });
+      io.of(`/cliente-${clienteId}`).emit('fila:nova_entrada', { telefone, departamento: depto, posicao });
     }
 
     return res.json({ mensagem: 'Entrou na fila com sucesso', departamento: depto, posicao });
@@ -128,7 +128,7 @@ router.post('/atribuir', async (req, res, next) => {
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`cliente_${clienteId}`).emit('fila:atribuido', { entrada, atendente: req.usuario });
+      io.of(`/cliente-${clienteId}`).emit('fila:atribuido', { entrada, atendente: req.usuario });
     }
 
     return res.json({ mensagem: 'Atendente atribuído com sucesso', entrada });
@@ -159,7 +159,7 @@ router.post('/fechar', async (req, res, next) => {
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`cliente_${clienteId}`).emit('fila:fechado', { entrada });
+      io.of(`/cliente-${clienteId}`).emit('fila:fechado', { entrada });
     }
 
     return res.json({ mensagem: 'Conversa encerrada', entrada });
@@ -200,6 +200,18 @@ router.post('/tickets/:ticket_id/notas', async (req, res, next) => {
       privada
     );
 
+    const io = req.app.get('io');
+    if (io) {
+      io.of(`/cliente-${req.usuario.cliente_id}`).emit('nota_adicionada', {
+        ticket_id: req.params.ticket_id,
+        nota_id: nota.id,
+        usuario_id: req.usuario.id,
+        conteudo: nota.conteudo,
+        privada: nota.privada,
+        timestamp: new Date(),
+      });
+    }
+
     return res.status(201).json(nota);
   } catch (err) {
     next(err);
@@ -222,6 +234,17 @@ router.put('/tickets/:ticket_id/status', async (req, res, next) => {
       req.usuario.cliente_id
     );
 
+    const io = req.app.get('io');
+    if (io) {
+      io.of(`/cliente-${req.usuario.cliente_id}`).emit('status_alterado', {
+        ticket_id: req.params.ticket_id,
+        novo_status: status,
+        usuario_id: req.usuario.id,
+        respondido_em: ticket.respondido_em,
+        timestamp: new Date(),
+      });
+    }
+
     return res.json(ticket);
   } catch (err) {
     next(err);
@@ -242,6 +265,15 @@ router.post('/tickets/:ticket_id/satisfacao', async (req, res, next) => {
       rating,
       req.usuario.cliente_id
     );
+
+    const io = req.app.get('io');
+    if (io) {
+      io.of(`/cliente-${req.usuario.cliente_id}`).emit('satisfacao_adicionada', {
+        ticket_id: req.params.ticket_id,
+        rating,
+        timestamp: new Date(),
+      });
+    }
 
     return res.json(ticket);
   } catch (err) {
