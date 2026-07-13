@@ -1,3 +1,5 @@
+'use strict';
+
 const { Router } = require('express');
 const { verificarJWT, autorizarClienteId } = require('../middleware/auth');
 const filaService = require('../services/filaService');
@@ -6,6 +8,8 @@ const departamentoService = require('../services/departamentoService');
 const router = Router();
 
 router.use(verificarJWT);
+
+// ── Departamentos ─────────────────────────────────────────────────────────
 
 // GET /api/fila/departamentos/:cliente_id
 router.get('/departamentos/:cliente_id', autorizarClienteId, async (req, res, next) => {
@@ -18,8 +22,9 @@ router.get('/departamentos/:cliente_id', autorizarClienteId, async (req, res, ne
   }
 });
 
+// ── Fila (queue operations) ───────────────────────────────────────────────
+
 // POST /api/fila/receber
-// Body: { cliente_id, telefone, texto }
 router.post('/receber', async (req, res, next) => {
   try {
     const { cliente_id, telefone, texto } = req.body;
@@ -39,6 +44,7 @@ router.post('/receber', async (req, res, next) => {
     if (io && resultado.acao === 'na_fila') {
       io.to(`cliente_${clienteId}`).emit('fila:nova_entrada', {
         telefone,
+        ticket_id: resultado.ticket_id,
         departamento: resultado.departamento,
         posicao: resultado.posicao,
       });
@@ -51,7 +57,6 @@ router.post('/receber', async (req, res, next) => {
 });
 
 // POST /api/fila/escolher-departamento
-// Body: { cliente_id, telefone, departamento_id (integer) }
 router.post('/escolher-departamento', async (req, res, next) => {
   try {
     const { cliente_id, telefone, departamento_id } = req.body;
@@ -83,7 +88,7 @@ router.post('/escolher-departamento', async (req, res, next) => {
   }
 });
 
-// GET /api/fila/status/:cliente_id?departamento=<id>
+// GET /api/fila/status/:cliente_id
 router.get('/status/:cliente_id', autorizarClienteId, async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.cliente_id, 10);
@@ -101,7 +106,6 @@ router.get('/status/:cliente_id', autorizarClienteId, async (req, res, next) => 
 });
 
 // POST /api/fila/atribuir
-// Body: { cliente_id, departamento_id, mensagem_id }
 router.post('/atribuir', async (req, res, next) => {
   try {
     const { cliente_id, departamento_id, mensagem_id } = req.body;
@@ -134,7 +138,6 @@ router.post('/atribuir', async (req, res, next) => {
 });
 
 // POST /api/fila/fechar
-// Body: { cliente_id, departamento_id, mensagem_id }
 router.post('/fechar', async (req, res, next) => {
   try {
     const { cliente_id, departamento_id, mensagem_id } = req.body;
@@ -160,6 +163,87 @@ router.post('/fechar', async (req, res, next) => {
     }
 
     return res.json({ mensagem: 'Conversa encerrada', entrada });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Ticket lifecycle ──────────────────────────────────────────────────────
+
+// GET /api/fila/tickets/:ticket_id/historico
+router.get('/tickets/:ticket_id/historico', async (req, res, next) => {
+  try {
+    const resultado = await filaService.obterHistoricoCompleto(
+      req.params.ticket_id,
+      req.usuario.cliente_id
+    );
+    res.json(resultado);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/fila/tickets/:ticket_id/notas
+router.post('/tickets/:ticket_id/notas', async (req, res, next) => {
+  try {
+    const { conteudo, privada = false } = req.body;
+
+    if (!conteudo || conteudo.trim().length === 0) {
+      return res.status(400).json({ error: 'conteudo é obrigatório e não pode estar vazio' });
+    }
+
+    const nota = await filaService.adicionarNota(
+      req.params.ticket_id,
+      req.usuario.id,
+      req.usuario.cliente_id,
+      conteudo,
+      privada
+    );
+
+    return res.status(201).json(nota);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/fila/tickets/:ticket_id/status
+router.put('/tickets/:ticket_id/status', async (req, res, next) => {
+  try {
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: 'status é obrigatório' });
+    }
+
+    const ticket = await filaService.mudarStatus(
+      req.params.ticket_id,
+      status,
+      req.usuario.id,
+      req.usuario.cliente_id
+    );
+
+    return res.json(ticket);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/fila/tickets/:ticket_id/satisfacao
+router.post('/tickets/:ticket_id/satisfacao', async (req, res, next) => {
+  try {
+    const rating = Number(req.body.rating);
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'rating deve ser um número inteiro entre 1 e 5' });
+    }
+
+    const ticket = await filaService.adicionarSatisfacao(
+      req.params.ticket_id,
+      rating,
+      req.usuario.cliente_id
+    );
+
+    return res.json(ticket);
   } catch (err) {
     next(err);
   }

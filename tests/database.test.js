@@ -13,6 +13,8 @@ describe('Database — Estrutura de tabelas', () => {
     'mensagens_automaticas',
     'sessoes_baileys',
     'atendente_departamentos',
+    'nota_tickets',
+    'historico_tickets',
   ];
 
   it.each(EXPECTED_TABLES)('tabela "%s" deve existir', async (tableName) => {

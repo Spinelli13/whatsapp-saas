@@ -1,3 +1,5 @@
+'use strict';
+
 const sequelize = require('../config/sequelize');
 
 const Cliente = require('./Cliente');
@@ -8,8 +10,10 @@ const FilaMensagem = require('./FilaMensagem');
 const MensagemAutomatica = require('./MensagemAutomatica');
 const SessaoBailey = require('./SessaoBailey');
 const AtendenteDepartamento = require('./AtendenteDepartamento');
+const NotaTicket = require('./NotaTicket');
+const HistoricoTicket = require('./HistoricoTicket');
 
-// ── Associações ────────────────────────────────────────────────
+// ── Associações base ───────────────────────────────────────────────────────
 
 Cliente.hasMany(Usuario,              { foreignKey: 'cliente_id', as: 'usuarios',              onDelete: 'CASCADE' });
 Cliente.hasMany(Departamento,         { foreignKey: 'cliente_id', as: 'departamentos',          onDelete: 'CASCADE' });
@@ -30,6 +34,8 @@ WhatsappNumero.belongsTo(Cliente,     { foreignKey: 'cliente_id', as: 'cliente' 
 FilaMensagem.belongsTo(Cliente,       { foreignKey: 'cliente_id',     as: 'cliente' });
 FilaMensagem.belongsTo(Departamento,  { foreignKey: 'departamento_id', as: 'departamento' });
 FilaMensagem.belongsTo(Usuario,       { foreignKey: 'atendente_id',    as: 'atendente' });
+FilaMensagem.hasMany(NotaTicket,      { foreignKey: 'ticket_id',       as: 'notas',      onDelete: 'CASCADE' });
+FilaMensagem.hasMany(HistoricoTicket, { foreignKey: 'ticket_id',       as: 'historico',  onDelete: 'CASCADE' });
 
 MensagemAutomatica.belongsTo(Cliente,     { foreignKey: 'cliente_id',     as: 'cliente' });
 MensagemAutomatica.belongsTo(Departamento,{ foreignKey: 'departamento_id', as: 'departamento' });
@@ -38,6 +44,12 @@ SessaoBailey.belongsTo(Cliente,       { foreignKey: 'cliente_id', as: 'cliente' 
 
 AtendenteDepartamento.belongsTo(Usuario,     { foreignKey: 'usuario_id',     as: 'usuario' });
 AtendenteDepartamento.belongsTo(Departamento,{ foreignKey: 'departamento_id', as: 'departamento' });
+
+NotaTicket.belongsTo(FilaMensagem, { foreignKey: 'ticket_id',   as: 'ticket' });
+NotaTicket.belongsTo(Usuario,      { foreignKey: 'usuario_id',  as: 'autor' });
+
+HistoricoTicket.belongsTo(FilaMensagem, { foreignKey: 'ticket_id',  as: 'ticket' });
+HistoricoTicket.belongsTo(Usuario,      { foreignKey: 'usuario_id', as: 'usuario' });
 
 module.exports = {
   sequelize,
@@ -49,4 +61,6 @@ module.exports = {
   MensagemAutomatica,
   SessaoBailey,
   AtendenteDepartamento,
+  NotaTicket,
+  HistoricoTicket,
 };

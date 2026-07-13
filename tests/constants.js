@@ -13,13 +13,13 @@ module.exports = {
 
   CLIENTE_IDS: { C1: 1, C2: 2 },
 
-  // Departamentos: IDs vindos do seed 003
   DEPT_IDS: {
     VENDAS: 1, SUPORTE: 2, FINANCEIRO: 3, RH: 4,
     VENDAS_NAUTICA: 5, SUPORTE_NAUTICO: 6,
   },
 
-  // Telefones únicos por cenário de teste (evita colisão de estado em memória)
+  // ── Telefones para testes de FILA (5585990*) ─────────────────────────
+  // Limpos pelo afterEach de fila.test.js via TELEFONE_PATTERN.
   TELEFONES: {
     AUTH_1:         '5585990010001',
     AUTH_2:         '5585990010002',
@@ -35,6 +35,27 @@ module.exports = {
     DB_1:           '5585990050001',
   },
 
-  // Padrão para limpeza pós-teste
+  // ── Telefones para testes de TICKET (5585991*) ───────────────────────
+  // NÃO capturados pelo TELEFONE_PATTERN. Cada describe usa afterAll próprio.
+  TICKET_TELEFONES: {
+    HIST:   '5585991010001',
+    NOTA_1: '5585991020001',
+    NOTA_2: '5585991020002',
+    STATUS: '5585991030001',
+    SAT:    '5585991040001',
+    ISO:    '5585991050001',
+  },
+
+  // Padrão de limpeza para afterEach de fila.test.js
   TELEFONE_PATTERN: '5585990%',
+
+  // Padrão de limpeza para afterAll dos describes de ticket
+  TICKET_PATTERN: '5585991%',
+
+  // UUIDs dos tickets seedados (seeder 006)
+  SEED_TICKET_IDS: {
+    T1:  '11111111-1111-4111-8111-111111111111',
+    T2:  '22222222-2222-4222-8222-222222222222',
+    TC2: '33333333-3333-4333-8333-333333333333',
+  },
 };

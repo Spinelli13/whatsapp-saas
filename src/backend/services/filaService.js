@@ -1,11 +1,14 @@
+'use strict';
+
 const { Op } = require('sequelize');
-const { FilaMensagem } = require('../models');
+const { FilaMensagem, NotaTicket, HistoricoTicket } = require('../models');
 const departamentoService = require('./departamentoService');
 
-// Estado em memória apenas para a fase transitória "menu enviado, aguardando escolha".
-// Se o servidor reiniciar, o pior caso é o usuário receber o menu novamente.
-// TODO: Persistir em tabela 'conversas' caso necessário em versões futuras.
+// ── Estados transitórios (apenas fase "menu enviado, aguardando escolha") ──
+// Restart do servidor → usuário recebe o menu novamente (comportamento aceitável).
 const _estados = {};
+
+const TICKET_STATUS = ['novo', 'respondendo', 'resolvido', 'fechado', 'reaberto'];
 
 function _chave(clienteId, telefone) {
   return `${clienteId}:${telefone}`;
@@ -32,6 +35,15 @@ async function _enfileirar(clienteId, departamentoId, telefone, texto) {
     telefone,
     texto,
     status: 'aguardando',
+    ticket_status: 'novo',
+  });
+
+  await HistoricoTicket.create({
+    ticket_id: entrada.id,
+    usuario_id: null,
+    acao: 'criado',
+    dados_anteriores: null,
+    dados_novos: { cliente_id: clienteId, departamento_id: departamentoId, telefone },
   });
 
   const posicao = await FilaMensagem.count({
@@ -41,10 +53,9 @@ async function _enfileirar(clienteId, departamentoId, telefone, texto) {
   return { entrada, posicao };
 }
 
-// ── API pública ───────────────────────────────────────────────
+// ── API pública — fila ────────────────────────────────────────────────────
 
 async function receberMensagem(clienteId, telefone, texto) {
-  // Verifica se já existe entrada ativa no banco
   const ativa = await FilaMensagem.findOne({
     where: {
       cliente_id: clienteId,
@@ -56,13 +67,11 @@ async function receberMensagem(clienteId, telefone, texto) {
 
   const mem = _getEstado(clienteId, telefone);
 
-  // Nenhuma entrada ativa e nenhum menu pendente → enviar menu
   if (!ativa && (!mem || mem.estado === 'fechado')) {
     _setEstado(clienteId, telefone, 'menu_enviado');
     return { acao: 'menu_enviado', menu: await _montarMenu(clienteId) };
   }
 
-  // Menu foi enviado, processando escolha
   if (!ativa && mem?.estado === 'menu_enviado') {
     const depto = await departamentoService.departamentoPorIndice(clienteId, (texto || '').trim());
 
@@ -75,18 +84,18 @@ async function receberMensagem(clienteId, telefone, texto) {
       };
     }
 
-    const { posicao } = await _enfileirar(clienteId, depto.id, telefone, texto);
+    const { entrada, posicao } = await _enfileirar(clienteId, depto.id, telefone, texto);
     _setEstado(clienteId, telefone, 'na_fila', depto.id);
 
     return {
       acao: 'na_fila',
+      ticket_id: entrada.id,
       departamento: { id: depto.id, nome: depto.nome, emoji: depto.emoji },
       posicao,
       resposta: `✅ Você entrou na fila de *${depto.nome}*.\nSua posição: *${posicao}º*\n\nAguarde, um atendente irá te chamar em breve. 🙏`,
     };
   }
 
-  // Já na fila (aguardando)
   if (ativa?.status === 'aguardando') {
     const posicao = await FilaMensagem.count({
       where: {
@@ -102,12 +111,10 @@ async function receberMensagem(clienteId, telefone, texto) {
     };
   }
 
-  // Atribuído a atendente → não auto-responder
   if (ativa?.status === 'atribuido') {
     return { acao: 'encaminhar_atendente', departamento_id: ativa.departamento_id, resposta: null };
   }
 
-  // Fallback
   _setEstado(clienteId, telefone, 'menu_enviado');
   return { acao: 'menu_enviado', menu: await _montarMenu(clienteId) };
 }
@@ -122,12 +129,10 @@ async function obterFila(clienteId, departamentoId = null) {
   const where = { cliente_id: clienteId };
   if (departamentoId) where.departamento_id = departamentoId;
 
-  const registros = await FilaMensagem.findAll({
+  return FilaMensagem.findAll({
     where,
     order: [['created_at', 'ASC']],
   });
-
-  return registros;
 }
 
 async function atribuirAtendente(clienteId, departamentoId, mensagemId, atendenteId) {
@@ -185,6 +190,138 @@ async function statusGeral(clienteId) {
   }, {});
 }
 
+// ── API pública — ticket lifecycle ───────────────────────────────────────
+
+async function obterHistoricoCompleto(ticketId, usuarioClienteId) {
+  const ticket = await FilaMensagem.findOne({ where: { id: ticketId } });
+
+  if (!ticket) {
+    const err = new Error('Ticket não encontrado');
+    err.status = 404;
+    throw err;
+  }
+
+  if (ticket.cliente_id !== usuarioClienteId) {
+    const err = new Error('Acesso negado');
+    err.status = 403;
+    throw err;
+  }
+
+  const [notas, historico] = await Promise.all([
+    NotaTicket.findAll({
+      where: { ticket_id: ticketId },
+      order: [['criado_em', 'ASC']],
+    }),
+    HistoricoTicket.findAll({
+      where: { ticket_id: ticketId },
+      order: [['criado_em', 'ASC']],
+    }),
+  ]);
+
+  return { ticket, notas, historico };
+}
+
+async function adicionarNota(ticketId, usuarioId, usuarioClienteId, conteudo, privada = false) {
+  const ticket = await FilaMensagem.findOne({ where: { id: ticketId } });
+
+  if (!ticket) {
+    const err = new Error('Ticket não encontrado');
+    err.status = 404;
+    throw err;
+  }
+
+  if (ticket.cliente_id !== usuarioClienteId) {
+    const err = new Error('Acesso negado');
+    err.status = 403;
+    throw err;
+  }
+
+  const nota = await NotaTicket.create({
+    ticket_id: ticketId,
+    usuario_id: usuarioId,
+    conteudo: conteudo.trim(),
+    privada: Boolean(privada),
+  });
+
+  await HistoricoTicket.create({
+    ticket_id: ticketId,
+    usuario_id: usuarioId,
+    acao: 'nota_adicionada',
+    dados_novos: { nota_id: nota.id, privada: Boolean(privada) },
+  });
+
+  return nota;
+}
+
+async function mudarStatus(ticketId, novoStatus, usuarioId, usuarioClienteId) {
+  if (!TICKET_STATUS.includes(novoStatus)) {
+    const err = new Error(`Status inválido. Valores aceitos: ${TICKET_STATUS.join(', ')}`);
+    err.status = 400;
+    throw err;
+  }
+
+  const ticket = await FilaMensagem.findOne({ where: { id: ticketId } });
+
+  if (!ticket) {
+    const err = new Error('Ticket não encontrado');
+    err.status = 404;
+    throw err;
+  }
+
+  if (ticket.cliente_id !== usuarioClienteId) {
+    const err = new Error('Acesso negado');
+    err.status = 403;
+    throw err;
+  }
+
+  const statusAnterior = ticket.ticket_status;
+  const atualizacoes = { ticket_status: novoStatus };
+
+  if (novoStatus === 'respondendo') {
+    atualizacoes.respondido_por = usuarioId;
+    atualizacoes.respondido_em = new Date();
+  }
+
+  await ticket.update(atualizacoes);
+
+  await HistoricoTicket.create({
+    ticket_id: ticketId,
+    usuario_id: usuarioId,
+    acao: 'status_alterado',
+    dados_anteriores: { ticket_status: statusAnterior },
+    dados_novos: { ticket_status: novoStatus },
+  });
+
+  return ticket;
+}
+
+async function adicionarSatisfacao(ticketId, rating, usuarioClienteId) {
+  const ticket = await FilaMensagem.findOne({ where: { id: ticketId } });
+
+  if (!ticket) {
+    const err = new Error('Ticket não encontrado');
+    err.status = 404;
+    throw err;
+  }
+
+  if (ticket.cliente_id !== usuarioClienteId) {
+    const err = new Error('Acesso negado');
+    err.status = 403;
+    throw err;
+  }
+
+  await ticket.update({ satisfaction_rating: rating });
+
+  await HistoricoTicket.create({
+    ticket_id: ticketId,
+    usuario_id: null,
+    acao: 'rating_adicionado',
+    dados_novos: { rating },
+  });
+
+  return ticket;
+}
+
 module.exports = {
   receberMensagem,
   enfileirar,
@@ -193,4 +330,9 @@ module.exports = {
   fecharConversa,
   obterEstado,
   statusGeral,
+  obterHistoricoCompleto,
+  adicionarNota,
+  mudarStatus,
+  adicionarSatisfacao,
+  TICKET_STATUS,
 };
