@@ -3,6 +3,7 @@ import { useAuthStore } from './store/authStore';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ClientePage from './pages/ClientePage';
+import PermissoesPage from './pages/PermissoesPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -27,6 +28,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <ClientePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/permissoes"
+          element={
+            <PrivateRoute>
+              <PermissoesPage />
             </PrivateRoute>
           }
         />

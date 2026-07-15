@@ -38,6 +38,10 @@ Usuario.init(
       allowNull: false,
       defaultValue: 'atendente',
     },
+    role_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     status: {
       type: DataTypes.ENUM('ativo', 'inativo'),
       allowNull: false,

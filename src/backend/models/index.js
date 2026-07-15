@@ -12,6 +12,8 @@ const SessaoBailey = require('./SessaoBailey');
 const AtendenteDepartamento = require('./AtendenteDepartamento');
 const NotaTicket = require('./NotaTicket');
 const HistoricoTicket = require('./HistoricoTicket');
+const Role = require('./Role');
+const Permissao = require('./Permissao');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -51,6 +53,17 @@ NotaTicket.belongsTo(Usuario,      { foreignKey: 'usuario_id',  as: 'autor' });
 HistoricoTicket.belongsTo(FilaMensagem, { foreignKey: 'ticket_id',  as: 'ticket' });
 HistoricoTicket.belongsTo(Usuario,      { foreignKey: 'usuario_id', as: 'usuario' });
 
+// ── RBAC associations ──────────────────────────────────────────────────────
+
+Cliente.hasMany(Role,    { foreignKey: 'cliente_id', as: 'roles',    onDelete: 'CASCADE' });
+Role.belongsTo(Cliente,  { foreignKey: 'cliente_id', as: 'cliente' });
+
+Role.belongsToMany(Permissao, { through: 'role_permissoes', foreignKey: 'role_id',     otherKey: 'permissao_id', as: 'Permissaos' });
+Permissao.belongsToMany(Role, { through: 'role_permissoes', foreignKey: 'permissao_id', otherKey: 'role_id',      as: 'Roles' });
+
+Usuario.belongsTo(Role, { foreignKey: 'role_id', as: 'role_obj' });
+Role.hasMany(Usuario,   { foreignKey: 'role_id', as: 'usuarios_com_role' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -63,4 +76,6 @@ module.exports = {
   AtendenteDepartamento,
   NotaTicket,
   HistoricoTicket,
+  Role,
+  Permissao,
 };

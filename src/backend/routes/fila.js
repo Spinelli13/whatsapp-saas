@@ -2,6 +2,7 @@
 
 const { Router } = require('express');
 const { verificarJWT, autorizarClienteId } = require('../middleware/auth');
+const verificarPermissao = require('../middleware/verificarPermissao');
 const filaService = require('../services/filaService');
 const departamentoService = require('../services/departamentoService');
 
@@ -25,7 +26,7 @@ router.get('/departamentos/:cliente_id', autorizarClienteId, async (req, res, ne
 // ── Fila (queue operations) ───────────────────────────────────────────────
 
 // POST /api/fila/receber
-router.post('/receber', async (req, res, next) => {
+router.post('/receber', verificarPermissao('fila.responder'), async (req, res, next) => {
   try {
     const { cliente_id, telefone, texto } = req.body;
 
@@ -89,7 +90,7 @@ router.post('/escolher-departamento', async (req, res, next) => {
 });
 
 // GET /api/fila/status/:cliente_id
-router.get('/status/:cliente_id', autorizarClienteId, async (req, res, next) => {
+router.get('/status/:cliente_id', autorizarClienteId, verificarPermissao('fila.visualizar'), async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.cliente_id, 10);
     const deptId = req.query.departamento ? parseInt(req.query.departamento, 10) : null;
@@ -184,7 +185,7 @@ router.get('/tickets/:ticket_id/historico', async (req, res, next) => {
 });
 
 // POST /api/fila/tickets/:ticket_id/notas
-router.post('/tickets/:ticket_id/notas', async (req, res, next) => {
+router.post('/tickets/:ticket_id/notas', verificarPermissao('notas.criar'), async (req, res, next) => {
   try {
     const { conteudo, privada = false } = req.body;
 
@@ -219,7 +220,7 @@ router.post('/tickets/:ticket_id/notas', async (req, res, next) => {
 });
 
 // PUT /api/fila/tickets/:ticket_id/status
-router.put('/tickets/:ticket_id/status', async (req, res, next) => {
+router.put('/tickets/:ticket_id/status', verificarPermissao('fila.fechar'), async (req, res, next) => {
   try {
     const { status } = req.body;
 
