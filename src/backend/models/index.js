@@ -17,6 +17,9 @@ const Permissao = require('./Permissao');
 const Plano = require('./Plano');
 const ClientePlano = require('./ClientePlano');
 const UsoCliente = require('./UsoCliente');
+const Usuario2FA = require('./Usuario2FA');
+const DispositivoUsuario = require('./DispositivoUsuario');
+const SessaoUsuario = require('./SessaoUsuario');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -78,6 +81,19 @@ ClientePlano.belongsTo(Plano,   { foreignKey: 'plano_id',   as: 'Plano' });
 
 UsoCliente.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
 
+// ── 2FA / Session associations ─────────────────────────────────────────────
+
+Usuario.hasOne(Usuario2FA,          { foreignKey: 'usuario_id', as: 'config2fa',    onDelete: 'CASCADE' });
+Usuario2FA.belongsTo(Usuario,        { foreignKey: 'usuario_id', as: 'usuario' });
+
+Usuario.hasMany(DispositivoUsuario,  { foreignKey: 'usuario_id', as: 'dispositivos', onDelete: 'CASCADE' });
+DispositivoUsuario.belongsTo(Usuario,{ foreignKey: 'usuario_id', as: 'usuario' });
+DispositivoUsuario.hasMany(SessaoUsuario, { foreignKey: 'dispositivo_id', as: 'sessoes' });
+
+Usuario.hasMany(SessaoUsuario,       { foreignKey: 'usuario_id', as: 'sessoes',      onDelete: 'CASCADE' });
+SessaoUsuario.belongsTo(Usuario,     { foreignKey: 'usuario_id', as: 'usuario' });
+SessaoUsuario.belongsTo(DispositivoUsuario, { foreignKey: 'dispositivo_id', as: 'dispositivo' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -95,4 +111,7 @@ module.exports = {
   Plano,
   ClientePlano,
   UsoCliente,
+  Usuario2FA,
+  DispositivoUsuario,
+  SessaoUsuario,
 };

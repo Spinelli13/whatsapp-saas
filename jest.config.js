@@ -11,7 +11,7 @@ module.exports = {
     'src/backend/**/*.js',
     '!src/backend/server.js',
   ],
-  coverageThresholds: {
+  coverageThreshold: {
     global: { lines: 70, branches: 60, functions: 75, statements: 70 },
   },
 };

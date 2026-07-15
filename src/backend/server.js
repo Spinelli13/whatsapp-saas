@@ -4,8 +4,10 @@ const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const session = require('express-session');
+const passport = require('./config/passport');
 
-const { PORT, NODE_ENV, FRONTEND_URL } = require('./config/environment');
+const { PORT, NODE_ENV, FRONTEND_URL, JWT_SECRET } = require('./config/environment');
 const { initializeSocket } = require('./config/socket');
 const { sequelize } = require('./models');
 const whatsappService = require('./services/whatsappService');
@@ -22,6 +24,21 @@ app.use(helmet());
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Sessions (required for Passport OAuth state parameter)
+app.use(session({
+  secret: JWT_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 if (NODE_ENV !== 'test') {
   app.use(morgan('dev'));

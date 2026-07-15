@@ -6,6 +6,7 @@ import ClientePage from './pages/ClientePage';
 import PermissoesPage from './pages/PermissoesPage';
 import PlanosPage from './pages/PlanosPage';
 import AdminClientesPage from './pages/AdminClientesPage';
+import SecurityPage from './pages/SecurityPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -54,6 +55,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <AdminClientesPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/security"
+          element={
+            <PrivateRoute>
+              <SecurityPage />
             </PrivateRoute>
           }
         />
