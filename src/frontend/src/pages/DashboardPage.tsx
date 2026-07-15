@@ -1,39 +1,49 @@
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from '../components/ui/Button';
 import { Loading } from '../components/ui/Loading';
+import { Layout } from '../components/layout/Layout';
+import { MetricasCards } from '../components/dashboard/MetricasCards';
+import { FilaList } from '../components/dashboard/FilaList';
+import { NotasPanel } from '../components/dashboard/NotasPanel';
+import { HistoricoTimeline } from '../components/dashboard/HistoricoTimeline';
 
 export default function DashboardPage() {
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
+  const [ticketSelecionado, setTicketSelecionado] = useState<string | null>(null);
 
   if (!usuario) return <Loading message="Carregando..." />;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">💬</span>
-            <h1 className="text-xl font-bold text-gray-900">WhatsApp SaaS</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{usuario.email}</span>
-            <Button variant="secondary" onClick={logout}>
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-          <div className="text-5xl mb-4">🚧</div>
-          <h2 className="text-xl font-semibold text-gray-700">Dashboard em construção</h2>
-          <p className="text-gray-500 mt-2">
-            Olá, <strong>{usuario.nome || usuario.email}</strong>! O painel de atendimento
-            será implementado na Fase 3.3.
+    <Layout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500">
+            Bem-vindo, <strong>{usuario.nome || usuario.email}</strong>
           </p>
         </div>
-      </main>
-    </div>
+
+        <MetricasCards />
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <FilaList
+              clienteId={usuario.cliente_id}
+              departamentoId={undefined}
+            />
+          </div>
+          <div className="space-y-4">
+            <NotasPanel ticketId={ticketSelecionado} />
+            <HistoricoTimeline ticketId={ticketSelecionado} />
+          </div>
+        </div>
+
+        {ticketSelecionado === null && (
+          <p className="text-xs text-gray-400 text-center">
+            Clique em um ticket na fila para ver notas e histórico
+          </p>
+        )}
+      </div>
+    </Layout>
   );
 }
