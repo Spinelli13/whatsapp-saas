@@ -122,7 +122,7 @@ describe('POST /api/planos/cliente/:id/plano/:id', () => {
     await sequelize.query(`
       INSERT INTO cliente_plano (cliente_id, plano_id, status, data_inicio, data_proxima_renovacao, criado_em)
       VALUES (1, 2, 'ativo', NOW(), NOW() + INTERVAL '30 days', NOW())
-      ON CONFLICT DO NOTHING
+      ON CONFLICT (cliente_id, plano_id) DO UPDATE SET status = 'ativo', data_proxima_renovacao = NOW() + INTERVAL '30 days'
     `);
   });
 

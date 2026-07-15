@@ -11,6 +11,12 @@ let tokenC1, tokenC2;
 let totpSecret; // saved across TOTP tests
 
 beforeAll(async () => {
+  // Clean up any leftover 2FA state from previous incomplete runs
+  // User IDs: admin@cliente1.com=1, admin@barcos.com=4
+  await sequelize.query(`DELETE FROM sessao_usuario WHERE usuario_id IN (1, 4)`);
+  await sequelize.query(`DELETE FROM dispositivo_usuario WHERE usuario_id IN (1, 4)`);
+  await sequelize.query(`DELETE FROM usuario_2fa WHERE usuario_id IN (1, 4)`);
+
   [tokenC1, tokenC2] = await Promise.all([
     loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
     loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
@@ -18,10 +24,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // Clean up any 2FA/device/session records created during tests
-  await sequelize.query(`DELETE FROM sessao_usuario WHERE usuario_id IN (1, 2)`);
-  await sequelize.query(`DELETE FROM dispositivo_usuario WHERE usuario_id IN (1, 2)`);
-  await sequelize.query(`DELETE FROM usuario_2fa WHERE usuario_id IN (1, 2)`);
+  // User IDs: admin@cliente1.com=1, admin@barcos.com=4
+  await sequelize.query(`DELETE FROM sessao_usuario WHERE usuario_id IN (1, 4)`);
+  await sequelize.query(`DELETE FROM dispositivo_usuario WHERE usuario_id IN (1, 4)`);
+  await sequelize.query(`DELETE FROM usuario_2fa WHERE usuario_id IN (1, 4)`);
 });
 
 // ── TOTP Setup ────────────────────────────────────────────────────────────

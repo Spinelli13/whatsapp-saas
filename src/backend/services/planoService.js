@@ -27,12 +27,13 @@ const PlanoService = {
       { where: { cliente_id, status: 'ativo' } }
     );
 
-    return ClientePlano.create({
-      cliente_id,
-      plano_id,
-      status: 'ativo',
-      data_proxima_renovacao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    const proxRenovacao = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const [novoPlano] = await ClientePlano.findOrCreate({
+      where: { cliente_id, plano_id },
+      defaults: { status: 'ativo', data_proxima_renovacao: proxRenovacao },
     });
+    await novoPlano.update({ status: 'ativo', data_proxima_renovacao: proxRenovacao });
+    return novoPlano;
   },
 
   async obterUsoCliente(cliente_id) {

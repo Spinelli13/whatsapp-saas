@@ -73,7 +73,7 @@ module.exports = {
       SET role_id = r.id
       FROM roles r
       WHERE r.cliente_id = u.cliente_id
-        AND r.nome = u.role
+        AND r.nome = u.role::text
         AND u.role_id IS NULL
     `);
   },
