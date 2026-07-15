@@ -4,6 +4,8 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ClientePage from './pages/ClientePage';
 import PermissoesPage from './pages/PermissoesPage';
+import PlanosPage from './pages/PlanosPage';
+import AdminClientesPage from './pages/AdminClientesPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -36,6 +38,22 @@ export default function App() {
           element={
             <PrivateRoute>
               <PermissoesPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/planos"
+          element={
+            <PrivateRoute>
+              <PlanosPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/clientes"
+          element={
+            <PrivateRoute>
+              <AdminClientesPage />
             </PrivateRoute>
           }
         />

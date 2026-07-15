@@ -3,6 +3,8 @@ const authRoutes = require('./auth');
 const whatsappRoutes = require('./whatsapp');
 const filaRoutes = require('./fila');
 const rolesRoutes = require('./roles');
+const planosRoutes = require('./planos');
+const usuariosRoutes = require('./usuarios');
 
 const router = Router();
 
@@ -14,5 +16,7 @@ router.use('/auth', authRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/fila', filaRoutes);
 router.use('/roles', rolesRoutes);
+router.use('/planos', planosRoutes);
+router.use('/usuarios', usuariosRoutes);
 
 module.exports = router;

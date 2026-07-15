@@ -14,6 +14,9 @@ const NotaTicket = require('./NotaTicket');
 const HistoricoTicket = require('./HistoricoTicket');
 const Role = require('./Role');
 const Permissao = require('./Permissao');
+const Plano = require('./Plano');
+const ClientePlano = require('./ClientePlano');
+const UsoCliente = require('./UsoCliente');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -64,6 +67,17 @@ Permissao.belongsToMany(Role, { through: 'role_permissoes', foreignKey: 'permiss
 Usuario.belongsTo(Role, { foreignKey: 'role_id', as: 'role_obj' });
 Role.hasMany(Usuario,   { foreignKey: 'role_id', as: 'usuarios_com_role' });
 
+// ── Planos associations ────────────────────────────────────────────────────
+
+Plano.hasMany(ClientePlano,   { foreignKey: 'plano_id',   as: 'assinaturas' });
+Cliente.hasMany(ClientePlano, { foreignKey: 'cliente_id', as: 'planos',     onDelete: 'CASCADE' });
+Cliente.hasMany(UsoCliente,   { foreignKey: 'cliente_id', as: 'usos',       onDelete: 'CASCADE' });
+
+ClientePlano.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+ClientePlano.belongsTo(Plano,   { foreignKey: 'plano_id',   as: 'Plano' });
+
+UsoCliente.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -78,4 +92,7 @@ module.exports = {
   HistoricoTicket,
   Role,
   Permissao,
+  Plano,
+  ClientePlano,
+  UsoCliente,
 };

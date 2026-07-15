@@ -3,6 +3,8 @@
 const { Router } = require('express');
 const { verificarJWT, autorizarClienteId } = require('../middleware/auth');
 const verificarPermissao = require('../middleware/verificarPermissao');
+const { verificarLimiteMensagens } = require('../middleware/verificarLimite');
+const PlanoService = require('../services/planoService');
 const filaService = require('../services/filaService');
 const departamentoService = require('../services/departamentoService');
 
@@ -26,7 +28,7 @@ router.get('/departamentos/:cliente_id', autorizarClienteId, async (req, res, ne
 // ── Fila (queue operations) ───────────────────────────────────────────────
 
 // POST /api/fila/receber
-router.post('/receber', verificarPermissao('fila.responder'), async (req, res, next) => {
+router.post('/receber', verificarPermissao('fila.responder'), verificarLimiteMensagens, async (req, res, next) => {
   try {
     const { cliente_id, telefone, texto } = req.body;
 
@@ -40,6 +42,9 @@ router.post('/receber', verificarPermissao('fila.responder'), async (req, res, n
     }
 
     const resultado = await filaService.receberMensagem(clienteId, telefone, texto);
+
+    // Track usage — fire-and-forget so a counter error never fails the request
+    PlanoService.incrementarMensagens(clienteId).catch(() => {});
 
     const io = req.app.get('io');
     if (io && resultado.acao === 'na_fila') {
