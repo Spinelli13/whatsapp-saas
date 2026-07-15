@@ -23,7 +23,9 @@
     "frontend:install": "npm install --prefix src/frontend",
     "frontend:dev": "npm run dev --prefix src/frontend",
     "frontend:build": "npm run build --prefix src/frontend",
-    "frontend:test": "npm run test:run --prefix src/frontend"
+    "frontend:test": "npm run test:run --prefix src/frontend",
+    "frontend:e2e": "npm run e2e --prefix src/frontend",
+    "frontend:e2e:run": "npm run e2e:run --prefix src/frontend"
   },
   "engines": {
     "node": ">=18.0.0"
