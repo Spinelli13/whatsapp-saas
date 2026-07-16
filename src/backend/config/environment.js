@@ -14,4 +14,6 @@ module.exports = {
   DB_USER: process.env.DB_USER || 'postgres',
   DB_PASSWORD: process.env.DB_PASSWORD || '',
   DB_SSL: process.env.DB_SSL === 'true',
+
+  SENTRY_DSN: process.env.SENTRY_DSN || null,
 };

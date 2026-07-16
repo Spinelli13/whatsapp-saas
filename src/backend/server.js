@@ -1,4 +1,5 @@
 require('dotenv').config();
+const Sentry = require('@sentry/node');
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
@@ -7,7 +8,20 @@ const morgan = require('morgan');
 const session = require('express-session');
 const passport = require('./config/passport');
 
-const { PORT, NODE_ENV, FRONTEND_URL, JWT_SECRET } = require('./config/environment');
+const { PORT, NODE_ENV, FRONTEND_URL, JWT_SECRET, SENTRY_DSN } = require('./config/environment');
+
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: NODE_ENV,
+    beforeSend(event) {
+      if (event.request?.headers?.authorization) {
+        delete event.request.headers.authorization;
+      }
+      return event;
+    },
+  });
+}
 const { initializeSocket } = require('./config/socket');
 const { sequelize } = require('./models');
 const whatsappService = require('./services/whatsappService');
@@ -55,7 +69,21 @@ app.use((req, res, next) => {
 app.use('/api', routes);
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: NODE_ENV,
+  });
+});
+
+app.get('/health/ready', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.json({ status: 'ready', database: 'connected' });
+  } catch (err) {
+    res.status(503).json({ status: 'not ready', database: 'disconnected', error: err.message });
+  }
 });
 
 app.use(errorHandler);

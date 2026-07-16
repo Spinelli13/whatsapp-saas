@@ -25,12 +25,16 @@
     "frontend:build": "npm run build --prefix src/frontend",
     "frontend:test": "npm run test:run --prefix src/frontend",
     "frontend:e2e": "npm run e2e --prefix src/frontend",
-    "frontend:e2e:run": "npm run e2e:run --prefix src/frontend"
+    "frontend:e2e:run": "npm run e2e:run --prefix src/frontend",
+    "db:migrate:prod": "NODE_ENV=production sequelize-cli db:migrate",
+    "build": "npm run frontend:build",
+    "build:docker": "docker build -t whatsapp-saas:latest ."
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@sentry/node": "^10.66.0",
     "@whiskeysockets/baileys": "^7.0.0-rc13",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
