@@ -5,6 +5,7 @@ const filaRoutes = require('./fila');
 const rolesRoutes = require('./roles');
 const planosRoutes = require('./planos');
 const usuariosRoutes = require('./usuarios');
+const lgpdRoutes = require('./lgpd');
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/fila', filaRoutes);
 router.use('/roles', rolesRoutes);
 router.use('/planos', planosRoutes);
 router.use('/usuarios', usuariosRoutes);
+router.use('/', lgpdRoutes);
 
 module.exports = router;

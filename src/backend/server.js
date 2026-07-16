@@ -11,6 +11,7 @@ const { PORT, NODE_ENV, FRONTEND_URL, JWT_SECRET } = require('./config/environme
 const { initializeSocket } = require('./config/socket');
 const { sequelize } = require('./models');
 const whatsappService = require('./services/whatsappService');
+const DataRetentionService = require('./services/dataRetentionService');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -60,6 +61,8 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 whatsappService.setIO(io);
+
+DataRetentionService.agendarCleanup();
 
 async function start() {
   try {

@@ -21,6 +21,9 @@ const UsoCliente = require('./UsoCliente');
 const Usuario2FA = require('./Usuario2FA');
 const DispositivoUsuario = require('./DispositivoUsuario');
 const SessaoUsuario = require('./SessaoUsuario');
+const AuditLog = require('./AuditLog');
+const DataRetentionPolicy = require('./DataRetentionPolicy');
+const ExportacaoDados = require('./ExportacaoDados');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -82,6 +85,20 @@ ClientePlano.belongsTo(Plano,   { foreignKey: 'plano_id',   as: 'Plano' });
 
 UsoCliente.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
 
+// ── LGPD / Audit associations ─────────────────────────────────────────────
+
+AuditLog.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
+AuditLog.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+Cliente.hasMany(AuditLog, { foreignKey: 'cliente_id', as: 'auditLogs', onDelete: 'CASCADE' });
+
+DataRetentionPolicy.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+Cliente.hasOne(DataRetentionPolicy, { foreignKey: 'cliente_id', as: 'retentionPolicy', onDelete: 'CASCADE' });
+
+ExportacaoDados.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
+ExportacaoDados.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+Cliente.hasMany(ExportacaoDados, { foreignKey: 'cliente_id', as: 'exportacoes', onDelete: 'CASCADE' });
+Usuario.hasMany(ExportacaoDados, { foreignKey: 'usuario_id', as: 'exportacoes', onDelete: 'CASCADE' });
+
 // ── 2FA / Session associations ─────────────────────────────────────────────
 
 Usuario.hasOne(Usuario2FA,          { foreignKey: 'usuario_id', as: 'config2fa',    onDelete: 'CASCADE' });
@@ -116,4 +133,7 @@ module.exports = {
   Usuario2FA,
   DispositivoUsuario,
   SessaoUsuario,
+  AuditLog,
+  DataRetentionPolicy,
+  ExportacaoDados,
 };
