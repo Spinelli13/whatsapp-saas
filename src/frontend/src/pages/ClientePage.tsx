@@ -1,6 +1,5 @@
 import { useAuth } from '../hooks/useAuth';
 import { Loading } from '../components/ui/Loading';
-import { ClienteLayout } from '../components/layout/ClienteLayout';
 import { ConexaoWhatsApp } from '../components/cliente/ConexaoWhatsApp';
 import { FilaClienteView } from '../components/cliente/FilaClienteView';
 import { MinhasNotas } from '../components/cliente/MinhasNotas';
@@ -12,23 +11,21 @@ export default function ClientePage() {
   if (!usuario) return <Loading message="Carregando..." />;
 
   return (
-    <ClienteLayout>
-      <div className="space-y-6 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">Olá, Cliente!</h1>
-          <p className="text-slate-500">Gerencie suas conversas pelo WhatsApp</p>
-        </div>
+    <div className="p-6 space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-100">Olá, Cliente!</h1>
+        <p className="text-slate-500">Gerencie suas conversas pelo WhatsApp</p>
+      </div>
 
-        <ConexaoWhatsApp />
+      <ConexaoWhatsApp />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <FilaClienteView clienteId={usuario.cliente_id} />
-          <div className="space-y-6">
-            <MinhasNotas clienteId={usuario.cliente_id} />
-            <MeuHistorico clienteId={usuario.cliente_id} />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FilaClienteView clienteId={usuario.cliente_id} />
+        <div className="space-y-6">
+          <MinhasNotas clienteId={usuario.cliente_id} />
+          <MeuHistorico clienteId={usuario.cliente_id} />
         </div>
       </div>
-    </ClienteLayout>
+    </div>
   );
 }
