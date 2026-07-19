@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Mail, Lock, Eye, EyeOff, Shield, Chrome, AlertCircle, MessageSquare } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Shield, Globe, AlertCircle, MessageSquare } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -174,7 +174,7 @@ export default function LoginPage() {
               className="flex items-center justify-center gap-2.5 w-full px-4 py-2.5 border border-slate-700 rounded-lg
                 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-600 transition-all duration-200"
             >
-              <Chrome className="h-4 w-4" /> Entrar com Google
+              <Globe className="h-4 w-4" /> Entrar com Google
             </a>
             <a
               href="/api/auth/microsoft"
