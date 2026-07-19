@@ -13,10 +13,10 @@ export default function ClientePage() {
 
   return (
     <ClienteLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Olá, Cliente!</h1>
-          <p className="text-gray-600">Gerencie suas conversas pelo WhatsApp</p>
+          <h1 className="text-2xl font-bold text-slate-100">Olá, Cliente!</h1>
+          <p className="text-slate-500">Gerencie suas conversas pelo WhatsApp</p>
         </div>
 
         <ConexaoWhatsApp />

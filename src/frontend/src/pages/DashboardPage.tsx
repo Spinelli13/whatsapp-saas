@@ -15,11 +15,11 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500">
-            Bem-vindo, <strong>{usuario.nome || usuario.email}</strong>
+          <h1 className="text-xl font-bold text-slate-100">Dashboard</h1>
+          <p className="text-sm text-slate-500">
+            Bem-vindo, <span className="text-slate-300 font-medium">{usuario.nome || usuario.email}</span>
           </p>
         </div>
 
@@ -39,7 +39,7 @@ export default function DashboardPage() {
         </div>
 
         {ticketSelecionado === null && (
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-slate-600 text-center">
             Clique em um ticket na fila para ver notas e histórico
           </p>
         )}

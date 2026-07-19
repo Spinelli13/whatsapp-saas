@@ -1,39 +1,50 @@
 import { NavLink } from 'react-router-dom';
+import {
+  BarChart3,
+  MessageCircle,
+  Shield,
+  Lock,
+  CreditCard,
+  Users,
+} from 'lucide-react';
 
 interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  Icon: React.ElementType;
+  end?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Fila', href: '/dashboard/fila', icon: '📋' },
-  { label: 'Histórico', href: '/dashboard/historico', icon: '📜' },
-  { label: 'Relatórios', href: '/dashboard/relatorios', icon: '📈' },
+  { label: 'Dashboard', href: '/dashboard', Icon: BarChart3, end: true },
+  { label: 'Cliente', href: '/cliente', Icon: MessageCircle },
+  { label: 'Permissões', href: '/admin/permissoes', Icon: Lock },
+  { label: 'Planos', href: '/planos', Icon: CreditCard },
+  { label: 'Segurança', href: '/security', Icon: Shield },
+  { label: 'Clientes', href: '/admin/clientes', Icon: Users },
 ];
 
 export function Sidebar() {
   return (
-    <aside className="w-56 bg-gray-900 flex flex-col flex-shrink-0">
-      <div className="p-4 border-b border-gray-700">
-        <p className="text-xs text-gray-400 uppercase tracking-wider">Menu</p>
+    <aside className="w-56 bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0">
+      <div className="px-4 py-3 border-b border-slate-800">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Menu</p>
       </div>
-      <nav className="flex-1 py-2">
+      <nav className="flex-1 py-2 space-y-0.5">
         {navItems.map((item) => (
           <NavLink
             key={item.href}
             to={item.href}
-            end={item.href === '/dashboard'}
+            end={item.end}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+              `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all duration-150 mx-2 rounded-lg ${
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-600/30'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
               }`
             }
           >
-            <span>{item.icon}</span>
+            <item.Icon className="h-4 w-4 flex-shrink-0" />
             <span>{item.label}</span>
           </NavLink>
         ))}

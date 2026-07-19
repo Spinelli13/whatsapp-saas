@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { StickyNote, Send } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface Nota {
@@ -35,9 +36,10 @@ export function NotasPanel({ ticketId }: NotasPanelProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      <div className="px-4 py-3 border-b border-gray-100">
-        <h2 className="font-semibold text-gray-900">Notas Internas</h2>
+    <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-slate-800 flex items-center gap-2">
+        <StickyNote className="h-4 w-4 text-amber-400" />
+        <h2 className="font-semibold text-slate-100">Notas Internas</h2>
       </div>
 
       <div className="p-4">
@@ -45,7 +47,9 @@ export function NotasPanel({ ticketId }: NotasPanelProps) {
           <>
             <div className="mb-3">
               <textarea
-                className="w-full border border-gray-200 rounded-lg p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-slate-200
+                  placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500
+                  transition-all duration-200"
                 rows={3}
                 placeholder="Adicionar nota interna..."
                 value={texto}
@@ -53,6 +57,7 @@ export function NotasPanel({ ticketId }: NotasPanelProps) {
               />
               <Button
                 size="sm"
+                icon={Send}
                 onClick={handleSalvar}
                 loading={saving}
                 disabled={!texto.trim()}
@@ -63,14 +68,14 @@ export function NotasPanel({ ticketId }: NotasPanelProps) {
             </div>
 
             {notas.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">Nenhuma nota para este ticket</p>
+              <p className="text-sm text-slate-600 text-center py-3">Nenhuma nota para este ticket</p>
             ) : (
               <ul className="space-y-2">
                 {notas.map((nota) => (
-                  <li key={nota.id} className="bg-yellow-50 rounded-lg p-3 text-sm">
-                    <p className="text-gray-800">{nota.texto}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {nota.usuario_nome} • {new Date(nota.criado_em).toLocaleString('pt-BR')}
+                  <li key={nota.id} className="bg-amber-900/10 border border-amber-800/20 rounded-lg p-3 text-sm">
+                    <p className="text-slate-200">{nota.texto}</p>
+                    <p className="text-xs text-slate-500 mt-1.5">
+                      {nota.usuario_nome} · {new Date(nota.criado_em).toLocaleString('pt-BR')}
                     </p>
                   </li>
                 ))}
@@ -78,7 +83,7 @@ export function NotasPanel({ ticketId }: NotasPanelProps) {
             )}
           </>
         ) : (
-          <p className="text-sm text-gray-400 text-center py-4">
+          <p className="text-sm text-slate-600 text-center py-4">
             Selecione um ticket para ver as notas
           </p>
         )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Plus, RefreshCw, FileText, User, CheckCircle2, History } from 'lucide-react';
 
 interface HistoricoEntry {
   id: string;
@@ -20,12 +21,12 @@ const ACAO_LABELS: Record<string, string> = {
   fechado: 'Ticket fechado',
 };
 
-const ACAO_ICONS: Record<string, string> = {
-  criado: '🆕',
-  status_alterado: '🔄',
-  nota_adicionada: '📝',
-  atribuido: '👤',
-  fechado: '✅',
+const ACAO_ICONS: Record<string, { Icon: React.ElementType; color: string }> = {
+  criado: { Icon: Plus, color: 'text-cyan-400' },
+  status_alterado: { Icon: RefreshCw, color: 'text-amber-400' },
+  nota_adicionada: { Icon: FileText, color: 'text-purple-400' },
+  atribuido: { Icon: User, color: 'text-blue-400' },
+  fechado: { Icon: CheckCircle2, color: 'text-emerald-400' },
 };
 
 export function HistoricoTimeline({ ticketId }: HistoricoTimelineProps) {
@@ -36,70 +37,53 @@ export function HistoricoTimeline({ ticketId }: HistoricoTimelineProps) {
     if (!ticketId) return;
     setLoading(true);
     try {
-      // Mock data — substituir por chamada real à API
       setEntries([
-        {
-          id: 'h1',
-          acao: 'criado',
-          dados_novos: null,
-          criado_em: new Date(Date.now() - 120 * 60000).toISOString(),
-          usuario_nome: null,
-        },
-        {
-          id: 'h2',
-          acao: 'atribuido',
-          dados_novos: { atendente: 'Ana Costa' },
-          criado_em: new Date(Date.now() - 60 * 60000).toISOString(),
-          usuario_nome: 'Sistema',
-        },
-        {
-          id: 'h3',
-          acao: 'status_alterado',
-          dados_novos: { ticket_status: 'respondendo' },
-          criado_em: new Date(Date.now() - 30 * 60000).toISOString(),
-          usuario_nome: 'Ana Costa',
-        },
+        { id: 'h1', acao: 'criado', dados_novos: null, criado_em: new Date(Date.now() - 120 * 60000).toISOString(), usuario_nome: null },
+        { id: 'h2', acao: 'atribuido', dados_novos: { atendente: 'Ana Costa' }, criado_em: new Date(Date.now() - 60 * 60000).toISOString(), usuario_nome: 'Sistema' },
+        { id: 'h3', acao: 'status_alterado', dados_novos: { ticket_status: 'respondendo' }, criado_em: new Date(Date.now() - 30 * 60000).toISOString(), usuario_nome: 'Ana Costa' },
       ]);
     } finally {
       setLoading(false);
     }
   }, [ticketId]);
 
-  useEffect(() => {
-    loadHistorico();
-  }, [loadHistorico]);
+  useEffect(() => { loadHistorico(); }, [loadHistorico]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      <div className="px-4 py-3 border-b border-gray-100">
-        <h2 className="font-semibold text-gray-900">Histórico</h2>
+    <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-slate-800 flex items-center gap-2">
+        <History className="h-4 w-4 text-slate-400" />
+        <h2 className="font-semibold text-slate-100">Histórico</h2>
       </div>
 
       <div className="p-4">
         {!ticketId ? (
-          <p className="text-sm text-gray-400 text-center py-4">
+          <p className="text-sm text-slate-600 text-center py-4">
             Selecione um ticket para ver o histórico
           </p>
         ) : loading ? (
-          <p className="text-sm text-gray-400 text-center py-4">Carregando...</p>
+          <p className="text-sm text-slate-600 text-center py-4">Carregando...</p>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Sem histórico</p>
+          <p className="text-sm text-slate-600 text-center py-4">Sem histórico</p>
         ) : (
-          <ol className="relative border-l border-gray-200 ml-3 space-y-4">
-            {entries.map((entry) => (
-              <li key={entry.id} className="ml-4">
-                <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-50 text-sm">
-                  {ACAO_ICONS[entry.acao] || '•'}
-                </span>
-                <p className="text-sm font-medium text-gray-800">
-                  {ACAO_LABELS[entry.acao] || entry.acao}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {entry.usuario_nome && <span>{entry.usuario_nome} • </span>}
-                  {new Date(entry.criado_em).toLocaleString('pt-BR')}
-                </p>
-              </li>
-            ))}
+          <ol className="relative border-l border-slate-800 ml-3 space-y-4">
+            {entries.map((entry) => {
+              const cfg = ACAO_ICONS[entry.acao] || { Icon: RefreshCw, color: 'text-slate-500' };
+              return (
+                <li key={entry.id} className="ml-4">
+                  <span className="absolute -left-3.5 flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 border border-slate-700">
+                    <cfg.Icon className={`h-3.5 w-3.5 ${cfg.color}`} />
+                  </span>
+                  <p className="text-sm font-medium text-slate-200">
+                    {ACAO_LABELS[entry.acao] || entry.acao}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {entry.usuario_nome && <span className="text-slate-400">{entry.usuario_nome} · </span>}
+                    {new Date(entry.criado_em).toLocaleString('pt-BR')}
+                  </p>
+                </li>
+              );
+            })}
           </ol>
         )}
       </div>

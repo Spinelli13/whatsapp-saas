@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Shield, Plus, Check, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../api/client';
 import { Button } from '../components/ui/Button';
@@ -72,7 +73,6 @@ export function PermissoesPage() {
         await apiClient.post(`/roles/${roleId}/permissoes/${permissaoId}`);
       }
       setMensagem(temPermissao ? 'Permissão removida' : 'Permissão adicionada');
-      // Refresh selected role
       const res = await apiClient.get(`/roles/${roleId}`);
       const updated = res.data.role as Role;
       setRoleSelecionada(updated);
@@ -85,33 +85,47 @@ export function PermissoesPage() {
   if (!usuario || usuario.role !== 'admin') {
     return (
       <div className="p-6">
-        <p className="text-red-600">Acesso restrito a administradores.</p>
+        <p className="text-red-400">Acesso restrito a administradores.</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Gerenciar Roles e Permissões</h1>
+    <div className="p-6 max-w-5xl mx-auto animate-fade-in">
+      <div className="flex items-center gap-3 mb-7">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
+          <Shield className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100">Gerenciar Roles e Permissões</h1>
+          <p className="text-sm text-slate-500">Controle de acesso granular por role</p>
+        </div>
+      </div>
 
       {erro && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded" role="alert">
+        <div className="mb-4 flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm" role="alert">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
           {erro}
-          <button className="ml-2 underline" onClick={() => setErro(null)}>Fechar</button>
+          <button className="ml-auto text-red-500 hover:text-red-300 transition-colors" onClick={() => setErro(null)}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
       {mensagem && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+        <div className="mb-4 flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm">
+          <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
           {mensagem}
-          <button className="ml-2 underline" onClick={() => setMensagem(null)}>Fechar</button>
+          <button className="ml-auto text-emerald-500 hover:text-emerald-300 transition-colors" onClick={() => setMensagem(null)}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Lista de Roles */}
         <div className="col-span-1">
-          <h2 className="text-lg font-semibold mb-3">Roles</h2>
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Roles</h2>
 
           <div className="flex gap-2 mb-4">
             <input
@@ -119,31 +133,32 @@ export function PermissoesPage() {
               placeholder="Nova role..."
               value={novoRoleNome}
               onChange={(e) => setNovoRoleNome(e.target.value)}
-              className="border rounded px-3 py-1.5 text-sm flex-1"
               onKeyDown={(e) => e.key === 'Enter' && criarRole()}
+              className="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
             />
-            <Button size="sm" onClick={criarRole}>Criar</Button>
+            <Button size="sm" icon={Plus} onClick={criarRole}>Criar</Button>
           </div>
 
           {loading ? (
-            <p className="text-gray-500 text-sm">Carregando...</p>
+            <p className="text-slate-600 text-sm">Carregando...</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               {roles.map((role) => (
                 <li key={role.id}>
                   <button
-                    className={`w-full text-left px-3 py-2 rounded border transition-colors ${
+                    className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all duration-200 ${
                       roleSelecionada?.id === role.id
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white hover:bg-gray-50 border-gray-200'
+                        ? 'bg-cyan-600/20 border-cyan-600/40 text-cyan-300'
+                        : 'bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
                     }`}
                     onClick={() => setRoleSelecionada(role)}
                   >
-                    <span className="font-medium">{role.nome}</span>
+                    <span className="font-medium text-sm">{role.nome}</span>
                     {role.eh_customizado && (
-                      <span className="ml-2 text-xs opacity-75">(custom)</span>
+                      <span className="ml-2 text-xs opacity-60">(custom)</span>
                     )}
-                    <span className="block text-xs opacity-75">
+                    <span className="block text-xs text-slate-500 mt-0.5">
                       {role.Permissaos?.length ?? 0} permissões
                     </span>
                   </button>
@@ -157,13 +172,13 @@ export function PermissoesPage() {
         <div className="col-span-2">
           {roleSelecionada ? (
             <>
-              <h2 className="text-lg font-semibold mb-3">
-                Permissões — <span className="text-blue-600">{roleSelecionada.nome}</span>
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">
+                Permissões — <span className="text-cyan-400 normal-case">{roleSelecionada.nome}</span>
               </h2>
 
               {Object.entries(permissoesPorCategoria).map(([categoria, perms]) => (
-                <div key={categoria} className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                <div key={categoria} className="mb-5">
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">
                     {categoria}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -172,17 +187,26 @@ export function PermissoesPage() {
                       return (
                         <label
                           key={perm.id}
-                          className="flex items-start gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                          className={`flex items-start gap-2.5 p-2.5 border rounded-lg cursor-pointer transition-all duration-200 ${
+                            temPermissao
+                              ? 'bg-cyan-500/10 border-cyan-500/30'
+                              : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                          }`}
                         >
+                          <div className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${
+                            temPermissao ? 'bg-cyan-500 border-cyan-500' : 'border-slate-600 bg-slate-700'
+                          }`}>
+                            {temPermissao && <Check className="h-3 w-3 text-white" />}
+                          </div>
                           <input
                             type="checkbox"
                             checked={temPermissao}
                             onChange={() => togglePermissao(roleSelecionada.id, perm.id, temPermissao)}
-                            className="mt-0.5"
+                            className="sr-only"
                           />
                           <div>
-                            <span className="text-sm font-medium">{perm.nome}</span>
-                            <span className="block text-xs text-gray-500">{perm.descricao}</span>
+                            <span className="text-sm font-medium text-slate-200">{perm.nome}</span>
+                            <span className="block text-xs text-slate-500">{perm.descricao}</span>
                           </div>
                         </label>
                       );
@@ -192,8 +216,9 @@ export function PermissoesPage() {
               ))}
             </>
           ) : (
-            <div className="flex items-center justify-center h-40 text-gray-400">
-              Selecione uma role para editar suas permissões
+            <div className="flex flex-col items-center justify-center h-40 text-slate-600 gap-2">
+              <Shield className="h-8 w-8 opacity-30" />
+              <p className="text-sm">Selecione uma role para editar suas permissões</p>
             </div>
           )}
         </div>
