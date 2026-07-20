@@ -11,6 +11,7 @@ import AdminClientesPage from './pages/AdminClientesPage';
 import NovoClientePage from './pages/NovoClientePage';
 import AdminRelatoriosPage from './pages/AdminRelatoriosPage';
 import SecurityPage from './pages/SecurityPage';
+import VendasPage from './pages/VendasPage';
 
 function AuthLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/configuracoes/usuarios" element={<PermissoesPage />} />
           <Route path="/configuracoes/planos" element={<PlanosPage />} />
           <Route path="/cliente" element={<ClientePage />} />
+          <Route path="/vendas" element={<VendasPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
