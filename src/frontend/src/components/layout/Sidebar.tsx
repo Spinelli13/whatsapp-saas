@@ -84,6 +84,7 @@ export function Sidebar() {
             <NavItem to="/calendario" label="Calendário" Icon={CalendarDays} isDark={isDark} />
             <NavItem to="/comunicacao" label="Comunicação" Icon={Send} isDark={isDark} />
             <NavItem to="/automacoes" label="Automações" Icon={Zap} isDark={isDark} />
+            <NavItem to="/analytics" label="Analytics" Icon={BarChart3} isDark={isDark} />
           </>
         )}
 
