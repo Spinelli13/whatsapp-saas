@@ -31,6 +31,9 @@ const ConfiguracaoPipeline = require('./ConfiguracaoPipeline');
 const Tarefa = require('./Tarefa');
 const CalendarioEvento = require('./CalendarioEvento');
 const ConfiguracaoTarefa = require('./ConfiguracaoTarefa');
+const Email = require('./Email');
+const SMS = require('./SMS');
+const ConfiguracaoComunicacao = require('./ConfiguracaoComunicacao');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -155,6 +158,23 @@ CalendarioEvento.belongsTo(Oportunidade, { foreignKey: 'oportunidade_id', as: 'o
 Cliente.hasOne(ConfiguracaoTarefa,       { foreignKey: 'cliente_id', as: 'configTarefas', onDelete: 'CASCADE' });
 ConfiguracaoTarefa.belongsTo(Cliente,    { foreignKey: 'cliente_id', as: 'cliente' });
 
+// ── Comunicação (Email / SMS) associations ─────────────────────────────────
+
+Cliente.hasMany(Email,    { foreignKey: 'cliente_id', as: 'emails', onDelete: 'CASCADE' });
+Email.belongsTo(Cliente,  { foreignKey: 'cliente_id', as: 'cliente' });
+Email.belongsTo(Usuario,  { foreignKey: 'usuario_id', as: 'remetente' });
+Email.belongsTo(Oportunidade, { foreignKey: 'oportunidade_id', as: 'oportunidade' });
+Email.belongsTo(Tarefa,       { foreignKey: 'tarefa_id',       as: 'tarefa' });
+
+Cliente.hasMany(SMS,      { foreignKey: 'cliente_id', as: 'mensagensSMS', onDelete: 'CASCADE' });
+SMS.belongsTo(Cliente,    { foreignKey: 'cliente_id', as: 'cliente' });
+SMS.belongsTo(Usuario,    { foreignKey: 'usuario_id', as: 'remetente' });
+SMS.belongsTo(Oportunidade, { foreignKey: 'oportunidade_id', as: 'oportunidade' });
+SMS.belongsTo(Tarefa,       { foreignKey: 'tarefa_id',       as: 'tarefa' });
+
+Cliente.hasOne(ConfiguracaoComunicacao,     { foreignKey: 'cliente_id', as: 'configComunicacao', onDelete: 'CASCADE' });
+ConfiguracaoComunicacao.belongsTo(Cliente,  { foreignKey: 'cliente_id', as: 'cliente' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -186,4 +206,7 @@ module.exports = {
   Tarefa,
   CalendarioEvento,
   ConfiguracaoTarefa,
+  Email,
+  SMS,
+  ConfiguracaoComunicacao,
 };
