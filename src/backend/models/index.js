@@ -24,6 +24,10 @@ const SessaoUsuario = require('./SessaoUsuario');
 const AuditLog = require('./AuditLog');
 const DataRetentionPolicy = require('./DataRetentionPolicy');
 const ExportacaoDados = require('./ExportacaoDados');
+const EstagioPipeline = require('./EstagioPipeline');
+const Oportunidade = require('./Oportunidade');
+const HistoricoOportunidade = require('./HistoricoOportunidade');
+const ConfiguracaoPipeline = require('./ConfiguracaoPipeline');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -112,6 +116,24 @@ Usuario.hasMany(SessaoUsuario,       { foreignKey: 'usuario_id', as: 'sessoes', 
 SessaoUsuario.belongsTo(Usuario,     { foreignKey: 'usuario_id', as: 'usuario' });
 SessaoUsuario.belongsTo(DispositivoUsuario, { foreignKey: 'dispositivo_id', as: 'dispositivo' });
 
+// ── Vendas / Pipeline associations ─────────────────────────────────────────
+
+Cliente.hasMany(EstagioPipeline,    { foreignKey: 'cliente_id', as: 'estagios',      onDelete: 'CASCADE' });
+EstagioPipeline.belongsTo(Cliente,  { foreignKey: 'cliente_id', as: 'cliente' });
+EstagioPipeline.hasMany(Oportunidade, { foreignKey: 'estagio_id', as: 'oportunidades' });
+
+Cliente.hasMany(Oportunidade,       { foreignKey: 'cliente_id', as: 'oportunidades', onDelete: 'CASCADE' });
+Oportunidade.belongsTo(Cliente,     { foreignKey: 'cliente_id', as: 'cliente' });
+Oportunidade.belongsTo(EstagioPipeline, { foreignKey: 'estagio_id', as: 'estagio' });
+Oportunidade.belongsTo(Usuario,     { foreignKey: 'usuario_id', as: 'responsavel' });
+Oportunidade.hasMany(HistoricoOportunidade, { foreignKey: 'oportunidade_id', as: 'historico', onDelete: 'CASCADE' });
+
+HistoricoOportunidade.belongsTo(Oportunidade, { foreignKey: 'oportunidade_id', as: 'oportunidade' });
+HistoricoOportunidade.belongsTo(Usuario,      { foreignKey: 'usuario_id',      as: 'usuario' });
+
+Cliente.hasOne(ConfiguracaoPipeline,      { foreignKey: 'cliente_id', as: 'configPipeline', onDelete: 'CASCADE' });
+ConfiguracaoPipeline.belongsTo(Cliente,   { foreignKey: 'cliente_id', as: 'cliente' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -136,4 +158,8 @@ module.exports = {
   AuditLog,
   DataRetentionPolicy,
   ExportacaoDados,
+  EstagioPipeline,
+  Oportunidade,
+  HistoricoOportunidade,
+  ConfiguracaoPipeline,
 };
