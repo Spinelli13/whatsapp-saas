@@ -15,6 +15,7 @@ import VendasPage from './pages/VendasPage';
 import TarefasPage from './pages/TarefasPage';
 import CalendarioPage from './pages/CalendarioPage';
 import ComunicacaoPage from './pages/ComunicacaoPage';
+import AutomacoesPage from './pages/AutomacoesPage';
 
 function AuthLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/tarefas" element={<TarefasPage />} />
           <Route path="/calendario" element={<CalendarioPage />} />
           <Route path="/comunicacao" element={<ComunicacaoPage />} />
+          <Route path="/automacoes" element={<AutomacoesPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
