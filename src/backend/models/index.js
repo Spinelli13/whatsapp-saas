@@ -38,6 +38,10 @@ const Workflow = require('./Workflow');
 const Trigger = require('./Trigger');
 const AcaoAutomacao = require('./AcaoAutomacao');
 const ExecucaoWorkflow = require('./ExecucaoWorkflow');
+const MetricasVendas = require('./MetricasVendas');
+const AnaliseSentimento = require('./AnaliseSentimento');
+const PrevisaoIA = require('./PrevisaoIA');
+const RecomendacaoIA = require('./RecomendacaoIA');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -195,6 +199,25 @@ ExecucaoWorkflow.belongsTo(Workflow,      { foreignKey: 'workflow_id',    as: 'w
 ExecucaoWorkflow.belongsTo(Oportunidade,  { foreignKey: 'oportunidade_id', as: 'oportunidade' });
 ExecucaoWorkflow.belongsTo(Tarefa,        { foreignKey: 'tarefa_id',       as: 'tarefa' });
 
+// ── Analytics / IA associations ────────────────────────────────────────────────
+
+Cliente.hasMany(MetricasVendas,     { foreignKey: 'cliente_id', as: 'metricasVendas',    onDelete: 'CASCADE' });
+MetricasVendas.belongsTo(Cliente,   { foreignKey: 'cliente_id', as: 'cliente' });
+
+Cliente.hasMany(AnaliseSentimento,  { foreignKey: 'cliente_id', as: 'analisesSentimento', onDelete: 'CASCADE' });
+AnaliseSentimento.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+AnaliseSentimento.belongsTo(Email,   { foreignKey: 'email_id',   as: 'email' });
+AnaliseSentimento.belongsTo(SMS,     { foreignKey: 'sms_id',     as: 'sms' });
+
+Cliente.hasMany(PrevisaoIA,         { foreignKey: 'cliente_id', as: 'previsoes',  onDelete: 'CASCADE' });
+PrevisaoIA.belongsTo(Cliente,       { foreignKey: 'cliente_id', as: 'cliente' });
+PrevisaoIA.belongsTo(Oportunidade,  { foreignKey: 'oportunidade_id', as: 'oportunidade' });
+
+Cliente.hasMany(RecomendacaoIA,     { foreignKey: 'cliente_id', as: 'recomendacoes',  onDelete: 'CASCADE' });
+RecomendacaoIA.belongsTo(Cliente,   { foreignKey: 'cliente_id', as: 'cliente' });
+RecomendacaoIA.belongsTo(Usuario,   { foreignKey: 'usuario_id', as: 'usuario' });
+RecomendacaoIA.belongsTo(Oportunidade, { foreignKey: 'oportunidade_id', as: 'oportunidade' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -233,4 +256,8 @@ module.exports = {
   Trigger,
   AcaoAutomacao,
   ExecucaoWorkflow,
+  MetricasVendas,
+  AnaliseSentimento,
+  PrevisaoIA,
+  RecomendacaoIA,
 };
