@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   BarChart3, MessageCircle, Shield, Lock, CreditCard,
-  Users, LogOut, FileText, TrendingUp, CheckSquare, CalendarDays,
+  Users, LogOut, FileText, TrendingUp, CheckSquare, CalendarDays, Send,
 } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuth } from '../../hooks/useAuth';
@@ -82,6 +82,7 @@ export function Sidebar() {
             <NavItem to="/vendas" label="Vendas" Icon={TrendingUp} isDark={isDark} />
             <NavItem to="/tarefas" label="Tarefas" Icon={CheckSquare} isDark={isDark} />
             <NavItem to="/calendario" label="Calendário" Icon={CalendarDays} isDark={isDark} />
+            <NavItem to="/comunicacao" label="Comunicação" Icon={Send} isDark={isDark} />
           </>
         )}
 
