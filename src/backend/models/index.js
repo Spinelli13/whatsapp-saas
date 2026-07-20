@@ -34,6 +34,10 @@ const ConfiguracaoTarefa = require('./ConfiguracaoTarefa');
 const Email = require('./Email');
 const SMS = require('./SMS');
 const ConfiguracaoComunicacao = require('./ConfiguracaoComunicacao');
+const Workflow = require('./Workflow');
+const Trigger = require('./Trigger');
+const AcaoAutomacao = require('./AcaoAutomacao');
+const ExecucaoWorkflow = require('./ExecucaoWorkflow');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -175,6 +179,22 @@ SMS.belongsTo(Tarefa,       { foreignKey: 'tarefa_id',       as: 'tarefa' });
 Cliente.hasOne(ConfiguracaoComunicacao,     { foreignKey: 'cliente_id', as: 'configComunicacao', onDelete: 'CASCADE' });
 ConfiguracaoComunicacao.belongsTo(Cliente,  { foreignKey: 'cliente_id', as: 'cliente' });
 
+// ── Automações (Workflow / Trigger / AcaoAutomacao / ExecucaoWorkflow) ─────────
+
+Cliente.hasMany(Workflow,           { foreignKey: 'cliente_id', as: 'workflows',  onDelete: 'CASCADE' });
+Workflow.belongsTo(Cliente,         { foreignKey: 'cliente_id', as: 'cliente' });
+Workflow.hasMany(Trigger,           { foreignKey: 'workflow_id', as: 'triggers',  onDelete: 'CASCADE' });
+Workflow.hasMany(AcaoAutomacao,     { foreignKey: 'workflow_id', as: 'acoes',     onDelete: 'CASCADE' });
+Workflow.hasMany(ExecucaoWorkflow,  { foreignKey: 'workflow_id', as: 'execucoes', onDelete: 'CASCADE' });
+
+Trigger.belongsTo(Workflow,         { foreignKey: 'workflow_id', as: 'workflow' });
+
+AcaoAutomacao.belongsTo(Workflow,   { foreignKey: 'workflow_id', as: 'workflow' });
+
+ExecucaoWorkflow.belongsTo(Workflow,      { foreignKey: 'workflow_id',    as: 'workflow' });
+ExecucaoWorkflow.belongsTo(Oportunidade,  { foreignKey: 'oportunidade_id', as: 'oportunidade' });
+ExecucaoWorkflow.belongsTo(Tarefa,        { foreignKey: 'tarefa_id',       as: 'tarefa' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -209,4 +229,8 @@ module.exports = {
   Email,
   SMS,
   ConfiguracaoComunicacao,
+  Workflow,
+  Trigger,
+  AcaoAutomacao,
+  ExecucaoWorkflow,
 };
