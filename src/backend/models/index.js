@@ -28,6 +28,9 @@ const EstagioPipeline = require('./EstagioPipeline');
 const Oportunidade = require('./Oportunidade');
 const HistoricoOportunidade = require('./HistoricoOportunidade');
 const ConfiguracaoPipeline = require('./ConfiguracaoPipeline');
+const Tarefa = require('./Tarefa');
+const CalendarioEvento = require('./CalendarioEvento');
+const ConfiguracaoTarefa = require('./ConfiguracaoTarefa');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -134,6 +137,24 @@ HistoricoOportunidade.belongsTo(Usuario,      { foreignKey: 'usuario_id',      a
 Cliente.hasOne(ConfiguracaoPipeline,      { foreignKey: 'cliente_id', as: 'configPipeline', onDelete: 'CASCADE' });
 ConfiguracaoPipeline.belongsTo(Cliente,   { foreignKey: 'cliente_id', as: 'cliente' });
 
+// ── Tarefas / Calendário associations ──────────────────────────────────────
+
+Cliente.hasMany(Tarefa,          { foreignKey: 'cliente_id', as: 'tarefas',  onDelete: 'CASCADE' });
+Tarefa.belongsTo(Cliente,        { foreignKey: 'cliente_id', as: 'cliente' });
+Tarefa.belongsTo(Usuario,        { foreignKey: 'usuario_atribuido_id', as: 'usuarioAtribuido' });
+Tarefa.belongsTo(Usuario,        { foreignKey: 'usuario_criador_id',   as: 'usuarioCriador' });
+Tarefa.belongsTo(Oportunidade,   { foreignKey: 'oportunidade_id',      as: 'oportunidade' });
+Tarefa.hasMany(CalendarioEvento, { foreignKey: 'tarefa_id',            as: 'eventos', onDelete: 'CASCADE' });
+
+Cliente.hasMany(CalendarioEvento,        { foreignKey: 'cliente_id', as: 'eventos', onDelete: 'CASCADE' });
+CalendarioEvento.belongsTo(Cliente,      { foreignKey: 'cliente_id', as: 'cliente' });
+CalendarioEvento.belongsTo(Usuario,      { foreignKey: 'usuario_id', as: 'usuario' });
+CalendarioEvento.belongsTo(Tarefa,       { foreignKey: 'tarefa_id',  as: 'tarefa' });
+CalendarioEvento.belongsTo(Oportunidade, { foreignKey: 'oportunidade_id', as: 'oportunidade' });
+
+Cliente.hasOne(ConfiguracaoTarefa,       { foreignKey: 'cliente_id', as: 'configTarefas', onDelete: 'CASCADE' });
+ConfiguracaoTarefa.belongsTo(Cliente,    { foreignKey: 'cliente_id', as: 'cliente' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -162,4 +183,7 @@ module.exports = {
   Oportunidade,
   HistoricoOportunidade,
   ConfiguracaoPipeline,
+  Tarefa,
+  CalendarioEvento,
+  ConfiguracaoTarefa,
 };
