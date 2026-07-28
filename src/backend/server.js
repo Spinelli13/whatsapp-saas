@@ -28,6 +28,7 @@ const whatsappService = require('./services/whatsappService');
 const DataRetentionService = require('./services/dataRetentionService');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
+const { compressionMiddleware, limiter } = require('./middleware/performanceMiddleware');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -35,6 +36,8 @@ const httpServer = http.createServer(app);
 // Initialize Socket.io with JWT auth + tenant namespaces
 const io = initializeSocket(httpServer);
 
+app.use(compressionMiddleware);
+app.use(limiter);
 app.use(helmet());
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(express.json());
