@@ -29,6 +29,8 @@ const DataRetentionService = require('./services/dataRetentionService');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 const { compressionMiddleware, limiter } = require('./middleware/performanceMiddleware');
+const healthRouter = require('./routes/health');
+const { addRequestHandlers, addErrorHandler } = require('./config/sentry');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -40,6 +42,7 @@ app.use(compressionMiddleware);
 app.use(limiter);
 app.use(helmet());
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+addRequestHandlers(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -70,25 +73,9 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', routes);
+app.use('/', healthRouter);
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: NODE_ENV,
-  });
-});
-
-app.get('/health/ready', async (req, res) => {
-  try {
-    await sequelize.authenticate();
-    res.json({ status: 'ready', database: 'connected' });
-  } catch (err) {
-    res.status(503).json({ status: 'not ready', database: 'disconnected', error: err.message });
-  }
-});
-
+addErrorHandler(app);
 app.use(errorHandler);
 
 whatsappService.setIO(io);
