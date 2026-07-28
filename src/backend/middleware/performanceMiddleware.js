@@ -3,6 +3,10 @@
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
+const noop = (_req, _res, next) => next();
+
 const compressionMiddleware = compression({
   level: 6,
   filter: (req, res) => {
@@ -12,23 +16,28 @@ const compressionMiddleware = compression({
 });
 
 // Global rate limit: 100 req / 15 min per IP
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: { erro: 'Muitas requisições, tente novamente mais tarde' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Desativado em testes para evitar falsos positivos por IPv6 / volume de requests
+const limiter = isTestEnv
+  ? noop
+  : rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+      message: { erro: 'Muitas requisições, tente novamente mais tarde' },
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
 
 // Per-authenticated-user rate limit: 60 req / min
-const userLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
-  keyGenerator: (req) => (req.usuario ? String(req.usuario.id) : req.ip),
-  skip: (req) => !req.usuario,
-  message: { erro: 'Limite de requisições por usuário atingido' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const userLimiter = isTestEnv
+  ? noop
+  : rateLimit({
+      windowMs: 60 * 1000,
+      max: 60,
+      keyGenerator: (req) => (req.usuario ? String(req.usuario.id) : req.ip),
+      skip: (req) => !req.usuario,
+      message: { erro: 'Limite de requisições por usuário atingido' },
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
 
 module.exports = { compressionMiddleware, limiter, userLimiter };
