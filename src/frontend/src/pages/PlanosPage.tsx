@@ -75,6 +75,25 @@ export function PlanosPage() {
     return <div className={`p-6 text-sm ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Carregando planos...</div>;
   }
 
+  // No data returned (endpoints unavailable or not yet configured) → dev placeholder
+  if (!planoAtual && planos.length === 0) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-64 gap-4 text-center">
+        <div className={`flex h-14 w-14 items-center justify-center rounded-xl border ${isDark ? 'bg-cyan-500/10 border-cyan-500/20' : 'bg-cyan-50 border-cyan-200'}`}>
+          <CreditCard className={`h-7 w-7 opacity-50 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
+        </div>
+        <div>
+          <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+            Página em desenvolvimento
+          </h2>
+          <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+            Gestão de planos e assinaturas estará disponível em breve.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 animate-fade-in">
       <div className="flex items-center gap-3">

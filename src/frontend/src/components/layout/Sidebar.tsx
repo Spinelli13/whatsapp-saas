@@ -46,6 +46,10 @@ export function Sidebar() {
   const { usuario, logout } = useAuth();
   const isDark = theme === 'dark';
   const isAdmin = usuario?.role === 'admin';
+  // Super-admin da plataforma: admin sem cliente_id
+  // Admin de cliente: admin com cliente_id (vê CRM + configurações do próprio cliente)
+  const isSuperAdmin = isAdmin && !usuario?.cliente_id;
+  const isClientAdmin = isAdmin && !!usuario?.cliente_id;
 
   return (
     <aside className={`w-56 border-r flex flex-col flex-shrink-0 ${
@@ -60,7 +64,7 @@ export function Sidebar() {
           <span className={`ml-auto text-xs px-1.5 py-0.5 rounded-full ${
             isDark ? 'bg-slate-800 text-slate-500' : 'bg-gray-100 text-gray-500'
           }`}>
-            {isAdmin ? 'Admin' : 'Cliente'}
+            {isAdmin ? 'Admin' : 'Atendente'}
           </span>
         </div>
       </div>
@@ -68,7 +72,8 @@ export function Sidebar() {
       <nav className="flex-1 py-2 space-y-0.5 overflow-y-auto">
         <NavItem to="/dashboard" label="Dashboard" Icon={BarChart3} end isDark={isDark} />
 
-        {isAdmin ? (
+        {isSuperAdmin ? (
+          // Plataforma: gerencia todos os clientes
           <>
             <NavItem to="/admin/clientes" label="Clientes" Icon={Users} isDark={isDark} />
             <NavItem to="/admin/relatorios" label="Relatórios" Icon={FileText} isDark={isDark} />
@@ -77,14 +82,22 @@ export function Sidebar() {
             <NavItem to="/configuracoes/planos" label="Planos" Icon={CreditCard} isDark={isDark} />
           </>
         ) : (
+          // CRM: admin de cliente OU atendente
           <>
-            <NavItem to="/cliente" label="Fila" Icon={MessageCircle} isDark={isDark} />
+            <NavItem to="/atendimento" label="Atendimento" Icon={MessageCircle} isDark={isDark} />
             <NavItem to="/vendas" label="Vendas" Icon={TrendingUp} isDark={isDark} />
             <NavItem to="/tarefas" label="Tarefas" Icon={CheckSquare} isDark={isDark} />
             <NavItem to="/calendario" label="Calendário" Icon={CalendarDays} isDark={isDark} />
             <NavItem to="/comunicacao" label="Comunicação" Icon={Send} isDark={isDark} />
             <NavItem to="/automacoes" label="Automações" Icon={Zap} isDark={isDark} />
             <NavItem to="/analytics" label="Analytics" Icon={BarChart3} isDark={isDark} />
+            {isClientAdmin && (
+              <>
+                <Divider isDark={isDark} />
+                <NavItem to="/configuracoes/usuarios" label="Permissões" Icon={Lock} isDark={isDark} />
+                <NavItem to="/configuracoes/planos" label="Planos" Icon={CreditCard} isDark={isDark} />
+              </>
+            )}
           </>
         )}
 

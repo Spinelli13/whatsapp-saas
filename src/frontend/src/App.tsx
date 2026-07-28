@@ -14,6 +14,7 @@ const AdminClientesPage = lazy(() => import('./pages/AdminClientesPage'));
 const NovoClientePage = lazy(() => import('./pages/NovoClientePage'));
 const AdminRelatoriosPage = lazy(() => import('./pages/AdminRelatoriosPage'));
 const SecurityPage = lazy(() => import('./pages/SecurityPage'));
+const AtendimentoPage = lazy(() => import('./pages/AtendimentoPage'));
 const VendasPage = lazy(() => import('./pages/VendasPage'));
 const TarefasPage = lazy(() => import('./pages/TarefasPage'));
 const CalendarioPage = lazy(() => import('./pages/CalendarioPage'));
@@ -51,7 +52,11 @@ export default function App() {
         <Route element={<AuthLayout />}>
           <Route
             path="/dashboard"
-            element={usuario?.role === 'admin' ? <AdminDashboard /> : <ClientDashboard />}
+            element={
+              usuario?.role === 'admin' && !usuario?.cliente_id
+                ? <AdminDashboard />   // super-admin da plataforma (sem cliente_id)
+                : <ClientDashboard />  // admin/atendente de cliente
+            }
           />
           <Route path="/admin/clientes" element={<AdminClientesPage />} />
           <Route path="/admin/clientes/novo" element={<NovoClientePage />} />
@@ -59,6 +64,7 @@ export default function App() {
           <Route path="/configuracoes/seguranca" element={<SecurityPage />} />
           <Route path="/configuracoes/usuarios" element={<PermissoesPage />} />
           <Route path="/configuracoes/planos" element={<PlanosPage />} />
+          <Route path="/atendimento" element={<AtendimentoPage />} />
           <Route path="/cliente" element={<ClientePage />} />
           <Route path="/vendas" element={<VendasPage />} />
           <Route path="/tarefas" element={<TarefasPage />} />
