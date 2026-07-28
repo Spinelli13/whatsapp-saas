@@ -11,6 +11,7 @@ const tarefasRoutes = require('./tarefas');
 const comunicacaoRoutes = require('./comunicacao');
 const automacoesRoutes = require('./automacoes');
 const analyticsRoutes = require('./analytics');
+const atendimentoRoutes = require('./atendimento');
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/tarefas', tarefasRoutes);
 router.use('/comunicacao', comunicacaoRoutes);
 router.use('/automacoes', automacoesRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/atendimento', atendimentoRoutes);
 router.use('/', lgpdRoutes);
 
 module.exports = router;

@@ -42,6 +42,8 @@ const MetricasVendas = require('./MetricasVendas');
 const AnaliseSentimento = require('./AnaliseSentimento');
 const PrevisaoIA = require('./PrevisaoIA');
 const RecomendacaoIA = require('./RecomendacaoIA');
+const Atendimento = require('./Atendimento');
+const MessageQueue = require('./MessageQueue');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -199,6 +201,15 @@ ExecucaoWorkflow.belongsTo(Workflow,      { foreignKey: 'workflow_id',    as: 'w
 ExecucaoWorkflow.belongsTo(Oportunidade,  { foreignKey: 'oportunidade_id', as: 'oportunidade' });
 ExecucaoWorkflow.belongsTo(Tarefa,        { foreignKey: 'tarefa_id',       as: 'tarefa' });
 
+// ── Atendimento / MessageQueue associations ────────────────────────────────────
+
+Cliente.hasMany(Atendimento,   { foreignKey: 'cliente_id',    as: 'atendimentos',  onDelete: 'CASCADE' });
+Atendimento.belongsTo(Cliente, { foreignKey: 'cliente_id',    as: 'cliente' });
+Atendimento.belongsTo(Usuario, { foreignKey: 'usuario_id',    as: 'atendente' });
+Atendimento.hasMany(MessageQueue, { foreignKey: 'atendimento_id', as: 'mensagens', onDelete: 'CASCADE' });
+
+MessageQueue.belongsTo(Atendimento, { foreignKey: 'atendimento_id', as: 'atendimento' });
+
 // ── Analytics / IA associations ────────────────────────────────────────────────
 
 Cliente.hasMany(MetricasVendas,     { foreignKey: 'cliente_id', as: 'metricasVendas',    onDelete: 'CASCADE' });
@@ -260,4 +271,6 @@ module.exports = {
   AnaliseSentimento,
   PrevisaoIA,
   RecomendacaoIA,
+  Atendimento,
+  MessageQueue,
 };
