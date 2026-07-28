@@ -1,29 +1,42 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { MainLayout } from './components/layout/MainLayout';
 import LoginPage from './pages/LoginPage';
-import AdminDashboard from './pages/AdminDashboard';
-import ClientDashboard from './pages/ClientDashboard';
-import ClientePage from './pages/ClientePage';
-import PermissoesPage from './pages/PermissoesPage';
-import PlanosPage from './pages/PlanosPage';
-import AdminClientesPage from './pages/AdminClientesPage';
-import NovoClientePage from './pages/NovoClientePage';
-import AdminRelatoriosPage from './pages/AdminRelatoriosPage';
-import SecurityPage from './pages/SecurityPage';
-import VendasPage from './pages/VendasPage';
-import TarefasPage from './pages/TarefasPage';
-import CalendarioPage from './pages/CalendarioPage';
-import ComunicacaoPage from './pages/ComunicacaoPage';
-import AutomacoesPage from './pages/AutomacoesPage';
-import AnalyticsPage from './pages/AnalyticsPage';
+
+// Lazy-loaded pages — split into per-route chunks
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const ClientDashboard = lazy(() => import('./pages/ClientDashboard'));
+const ClientePage = lazy(() => import('./pages/ClientePage'));
+const PermissoesPage = lazy(() => import('./pages/PermissoesPage'));
+const PlanosPage = lazy(() => import('./pages/PlanosPage'));
+const AdminClientesPage = lazy(() => import('./pages/AdminClientesPage'));
+const NovoClientePage = lazy(() => import('./pages/NovoClientePage'));
+const AdminRelatoriosPage = lazy(() => import('./pages/AdminRelatoriosPage'));
+const SecurityPage = lazy(() => import('./pages/SecurityPage'));
+const VendasPage = lazy(() => import('./pages/VendasPage'));
+const TarefasPage = lazy(() => import('./pages/TarefasPage'));
+const CalendarioPage = lazy(() => import('./pages/CalendarioPage'));
+const ComunicacaoPage = lazy(() => import('./pages/ComunicacaoPage'));
+const AutomacoesPage = lazy(() => import('./pages/AutomacoesPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-full p-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+    </div>
+  );
+}
 
 function AuthLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return (
     <MainLayout>
-      <Outlet />
+      <Suspense fallback={<PageLoader />}>
+        <Outlet />
+      </Suspense>
     </MainLayout>
   );
 }
