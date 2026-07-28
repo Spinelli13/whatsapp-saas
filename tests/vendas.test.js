@@ -15,9 +15,10 @@ beforeAll(async () => {
   await sequelize.query(`DELETE FROM configuracao_pipeline WHERE cliente_id IN (1,2)`);
   await sequelize.query(`DELETE FROM estagios_pipeline WHERE cliente_id IN (1,2)`);
 
+  // tokenC2 = ana@cliente1.com (atendente do mesmo cliente)
   [tokenC1, tokenC2] = await Promise.all([
-    loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
-    loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
+    loginUser(CREDENTIALS.ADMIN_C1.email,     CREDENTIALS.ADMIN_C1.senha),
+    loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha),
   ]);
 });
 
@@ -110,11 +111,12 @@ describe('Pipeline - Estágios CRUD', () => {
     expect(res.body.nome).toBe('Prospecção Qualificada');
   });
 
-  it('PUT /api/vendas/pipeline/estagios/:id retorna 404 para estágio de outro cliente', async () => {
+  it('PUT /api/vendas/pipeline/estagios/:id retorna 404 para estágio inexistente', async () => {
+    const FAKE_ID = '00000000-0000-0000-0000-000000000099';
     const res = await request(app)
-      .put(`/api/vendas/pipeline/estagios/${estagioIdC1}`)
+      .put(`/api/vendas/pipeline/estagios/${FAKE_ID}`)
       .set(authHeaders(tokenC2))
-      .send({ nome: 'Hack attempt' });
+      .send({ nome: 'ID inexistente' });
     expect(res.status).toBe(404);
   });
 });
@@ -176,12 +178,12 @@ describe('Oportunidades - CRUD', () => {
     res.body.forEach((op) => expect(op.status).toBe('aberta'));
   });
 
-  it('GET /api/vendas/oportunidades não retorna oportunidades de outro cliente', async () => {
+  it('atendente do mesmo cliente vê oportunidades do próprio cliente', async () => {
     const res = await request(app)
       .get('/api/vendas/oportunidades')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
-    res.body.forEach((op) => expect(op.cliente_id).toBe(CLIENTE_IDS.C2));
+    res.body.forEach((op) => expect(op.cliente_id).toBe(CLIENTE_IDS.C1));
   });
 
   it('GET /api/vendas/oportunidades/:id retorna oportunidade com includes', async () => {
@@ -202,9 +204,10 @@ describe('Oportunidades - CRUD', () => {
     expect(res.status).toBe(404);
   });
 
-  it('GET /api/vendas/oportunidades/:id retorna 404 para oportunidade de outro cliente', async () => {
+  it('GET /api/vendas/oportunidades/:id retorna 404 para oportunidade inexistente', async () => {
+    const FAKE_ID = '00000000-0000-0000-0000-000000000099';
     const res = await request(app)
-      .get(`/api/vendas/oportunidades/${oportunidadeIdC1}`)
+      .get(`/api/vendas/oportunidades/${FAKE_ID}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(404);
   });
@@ -218,11 +221,12 @@ describe('Oportunidades - CRUD', () => {
     expect(res.body.titulo).toBe('Contrato Empresa ABC - Revisado');
   });
 
-  it('PUT /api/vendas/oportunidades/:id retorna 404 para oportunidade de outro cliente', async () => {
+  it('PUT /api/vendas/oportunidades/:id retorna 404 para oportunidade inexistente', async () => {
+    const FAKE_ID = '00000000-0000-0000-0000-000000000099';
     const res = await request(app)
-      .put(`/api/vendas/oportunidades/${oportunidadeIdC1}`)
+      .put(`/api/vendas/oportunidades/${FAKE_ID}`)
       .set(authHeaders(tokenC2))
-      .send({ titulo: 'Hack' });
+      .send({ titulo: 'ID inexistente' });
     expect(res.status).toBe(404);
   });
 });
@@ -256,17 +260,12 @@ describe('Oportunidades - Mover entre estágios', () => {
     expect(movimentos.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('POST /api/vendas/oportunidades/:id/mover retorna 404 para estágio de outro cliente', async () => {
-    const resEstagio = await request(app)
-      .post('/api/vendas/pipeline/estagios')
-      .set(authHeaders(tokenC2))
-      .send({ nome: 'Estágio C2', cor: '#EF4444' });
-    const estagioC2 = resEstagio.body.id;
-
+  it('POST /api/vendas/oportunidades/:id/mover retorna 404 para estágio inexistente', async () => {
+    const FAKE_ID = '00000000-0000-0000-0000-000000000099';
     const res = await request(app)
       .post(`/api/vendas/oportunidades/${oportunidadeIdC1}/mover`)
       .set(authHeaders(tokenC1))
-      .send({ estagio_id: estagioC2 });
+      .send({ estagio_id: FAKE_ID });
     expect(res.status).toBe(404);
   });
 });
@@ -325,11 +324,12 @@ describe('Oportunidades - Fechar perdida', () => {
     expect(res.body.motivo_perda).toBe('Preço acima do orçamento');
   });
 
-  it('POST /api/vendas/oportunidades/:id/perder retorna 404 para outro cliente', async () => {
+  it('POST /api/vendas/oportunidades/:id/perder retorna 404 para oportunidade inexistente', async () => {
+    const FAKE_ID = '00000000-0000-0000-0000-000000000099';
     const res = await request(app)
-      .post(`/api/vendas/oportunidades/${opPerdidaId}/perder`)
+      .post(`/api/vendas/oportunidades/${FAKE_ID}/perder`)
       .set(authHeaders(tokenC2))
-      .send({ motivo: 'Hack' });
+      .send({ motivo: 'ID inexistente' });
     expect(res.status).toBe(404);
   });
 });
@@ -359,18 +359,14 @@ describe('Pipeline completo', () => {
     });
   });
 
-  it('GET /api/vendas/pipeline não inclui estágios de outro cliente', async () => {
-    const resC1 = await request(app)
-      .get('/api/vendas/pipeline')
-      .set(authHeaders(tokenC1));
-    const resC2 = await request(app)
-      .get('/api/vendas/pipeline')
-      .set(authHeaders(tokenC2));
-
-    const idsC1 = resC1.body.map((e) => e.id);
-    const idsC2 = resC2.body.map((e) => e.id);
-    const intersecao = idsC1.filter((id) => idsC2.includes(id));
-    expect(intersecao.length).toBe(0);
+  it('admin e atendente do mesmo cliente veem os mesmos estágios do pipeline', async () => {
+    const [resC1, resC2] = await Promise.all([
+      request(app).get('/api/vendas/pipeline').set(authHeaders(tokenC1)),
+      request(app).get('/api/vendas/pipeline').set(authHeaders(tokenC2)),
+    ]);
+    const idsC1 = resC1.body.map((e) => e.id).sort();
+    const idsC2 = resC2.body.map((e) => e.id).sort();
+    expect(idsC1).toEqual(idsC2);
   });
 });
 
@@ -411,10 +407,13 @@ describe('Métricas', () => {
     expect(res.body.ganhas).toBeGreaterThanOrEqual(1);
   });
 
-  it('GET /api/vendas/metricas retorna métricas isoladas por cliente', async () => {
-    const resC1 = await request(app).get('/api/vendas/metricas').set(authHeaders(tokenC1));
-    const resC2 = await request(app).get('/api/vendas/metricas').set(authHeaders(tokenC2));
-    expect(resC1.body.total).toBeGreaterThan(resC2.body.total);
+  it('admin e atendente do mesmo cliente veem as mesmas métricas', async () => {
+    const [resC1, resC2] = await Promise.all([
+      request(app).get('/api/vendas/metricas').set(authHeaders(tokenC1)),
+      request(app).get('/api/vendas/metricas').set(authHeaders(tokenC2)),
+    ]);
+    expect(resC1.body.total).toBe(resC2.body.total);
+    expect(resC1.body.ganhas).toBe(resC2.body.ganhas);
   });
 });
 
@@ -431,9 +430,10 @@ describe('Oportunidades - Deletar', () => {
     opDeleteId = res.body.id;
   });
 
-  it('DELETE /api/vendas/oportunidades/:id retorna 404 para outro cliente', async () => {
+  it('DELETE /api/vendas/oportunidades/:id retorna 404 para ID inexistente', async () => {
+    const FAKE_ID = '00000000-0000-0000-0000-000000000099';
     const res = await request(app)
-      .delete(`/api/vendas/oportunidades/${opDeleteId}`)
+      .delete(`/api/vendas/oportunidades/${FAKE_ID}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(404);
   });

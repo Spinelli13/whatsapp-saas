@@ -13,9 +13,10 @@ beforeAll(async () => {
   await sequelize.query(`DELETE FROM calendario_eventos WHERE cliente_id IN (1,2)`);
   await sequelize.query(`DELETE FROM tarefas WHERE cliente_id IN (1,2)`);
 
+  // tokenC2 = ana@cliente1.com (atendente do mesmo cliente)
   [tokenC1, tokenC2] = await Promise.all([
-    loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
-    loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
+    loginUser(CREDENTIALS.ADMIN_C1.email,     CREDENTIALS.ADMIN_C1.senha),
+    loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha),
   ]);
 });
 
@@ -121,7 +122,7 @@ describe('Tarefas - CRUD', () => {
       .get('/api/tarefas?status=todo')
       .set(authHeaders(tokenC1));
     expect(res.status).toBe(200);
-    expect(res.body.every((t: any) => t.status === 'todo')).toBe(true);
+    expect(res.body.every((t) => t.status === 'todo')).toBe(true);
   });
 });
 
@@ -210,37 +211,40 @@ describe('Tarefas - Métricas', () => {
     expect(Number(res.body.taxaConclusao)).toBeGreaterThan(0);
   });
 
-  it('métricas C2 são independentes de C1', async () => {
-    const res = await request(app)
-      .get('/api/tarefas/metricas')
-      .set(authHeaders(tokenC2));
-    expect(res.status).toBe(200);
-    expect(res.body.total).toBe(0);
+  it('atendente do mesmo cliente vê as mesmas métricas que o admin', async () => {
+    const [resAdmin, resAtendente] = await Promise.all([
+      request(app).get('/api/tarefas/metricas').set(authHeaders(tokenC1)),
+      request(app).get('/api/tarefas/metricas').set(authHeaders(tokenC2)),
+    ]);
+    expect(resAtendente.status).toBe(200);
+    expect(resAtendente.body.total).toBe(resAdmin.body.total);
   });
 });
 
 // ── Isolamento multi-tenant ───────────────────────────────────────────────────
 
 describe('Tarefas - Isolamento multi-tenant', () => {
-  it('C2 não vê tarefas de C1', async () => {
+  const FAKE_ID = '00000000-0000-0000-0000-000000000099';
+
+  it('atendente do mesmo cliente vê as tarefas do cliente', async () => {
     const res = await request(app)
       .get('/api/tarefas')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
-    const ids = res.body.map((t: any) => t.id);
-    expect(ids).not.toContain(tarefaIdC1);
+    const ids = res.body.map((t) => t.id);
+    expect(ids).toContain(tarefaIdC1);
   });
 
-  it('C2 não acessa tarefa de C1 por id', async () => {
+  it('acesso a tarefa com ID inexistente retorna 404', async () => {
     const res = await request(app)
-      .get(`/api/tarefas/${tarefaIdC1}`)
+      .get(`/api/tarefas/${FAKE_ID}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(404);
   });
 
-  it('C2 não muda status de tarefa de C1', async () => {
+  it('mudança de status em tarefa inexistente retorna 404', async () => {
     const res = await request(app)
-      .post(`/api/tarefas/${tarefaIdC1}/status`)
+      .post(`/api/tarefas/${FAKE_ID}/status`)
       .set(authHeaders(tokenC2))
       .send({ status: 'todo' });
     expect(res.status).toBe(404);
@@ -342,13 +346,13 @@ describe('Calendário - Próximos eventos', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('C2 não vê próximos eventos de C1', async () => {
+  it('atendente do mesmo cliente vê os próximos eventos do cliente', async () => {
     const res = await request(app)
       .get('/api/tarefas/calendario/proximos')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
-    const ids = res.body.map((e: any) => e.id);
-    expect(ids).not.toContain(eventoIdC1);
+    const ids = res.body.map((e) => e.id);
+    expect(ids).toContain(eventoIdC1);
   });
 });
 
@@ -363,9 +367,10 @@ describe('Tarefas/Calendário - Deletar', () => {
     expect(res.body.success).toBe(true);
   });
 
-  it('DELETE /api/tarefas/:id C2 não deleta tarefa de C1', async () => {
+  it('DELETE /api/tarefas/:id com ID inexistente retorna 404', async () => {
+    const FAKE_ID = '00000000-0000-0000-0000-000000000099';
     const res = await request(app)
-      .delete(`/api/tarefas/${tarefaIdC1}`)
+      .delete(`/api/tarefas/${FAKE_ID}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(404);
   });

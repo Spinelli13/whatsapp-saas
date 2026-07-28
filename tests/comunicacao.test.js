@@ -13,9 +13,10 @@ beforeAll(async () => {
   await sequelize.query(`DELETE FROM emails WHERE cliente_id IN (1,2)`);
   await sequelize.query(`DELETE FROM sms WHERE cliente_id IN (1,2)`);
 
+  // tokenC2 = ana@cliente1.com (atendente do mesmo cliente)
   [tokenC1, tokenC2] = await Promise.all([
-    loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
-    loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
+    loginUser(CREDENTIALS.ADMIN_C1.email,     CREDENTIALS.ADMIN_C1.senha),
+    loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha),
   ]);
 });
 
@@ -126,7 +127,7 @@ describe('Email - CRUD', () => {
       .get('/api/comunicacao/emails?status=enviado')
       .set(authHeaders(tokenC1));
     expect(res.status).toBe(200);
-    expect(res.body.every((e: any) => e.status === 'enviado')).toBe(true);
+    expect(res.body.every((e) => e.status === 'enviado')).toBe(true);
   });
 
   it('GET /api/comunicacao/emails?tipo=enviado filtra por tipo', async () => {
@@ -134,32 +135,34 @@ describe('Email - CRUD', () => {
       .get('/api/comunicacao/emails?tipo=enviado')
       .set(authHeaders(tokenC1));
     expect(res.status).toBe(200);
-    expect(res.body.every((e: any) => e.tipo === 'enviado')).toBe(true);
+    expect(res.body.every((e) => e.tipo === 'enviado')).toBe(true);
   });
 });
 
 // ── Email multi-tenant ────────────────────────────────────────────────────────
 
 describe('Email - Isolamento multi-tenant', () => {
-  it('C2 não vê emails de C1', async () => {
+  const FAKE_ID = '00000000-0000-0000-0000-000000000099';
+
+  it('atendente do mesmo cliente vê emails do próprio cliente', async () => {
     const res = await request(app)
       .get('/api/comunicacao/emails')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
-    const ids = res.body.map((e: any) => e.id);
-    expect(ids).not.toContain(emailIdC1);
+    const ids = res.body.map((e) => e.id);
+    expect(ids).toContain(emailIdC1);
   });
 
-  it('C2 não acessa email de C1 por ID', async () => {
+  it('acesso a email com ID inexistente retorna 404', async () => {
     const res = await request(app)
-      .get(`/api/comunicacao/emails/${emailIdC1}`)
+      .get(`/api/comunicacao/emails/${FAKE_ID}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(404);
   });
 
-  it('C2 não deleta email de C1', async () => {
+  it('tentativa de deletar email inexistente retorna 404', async () => {
     const res = await request(app)
-      .delete(`/api/comunicacao/emails/${emailIdC1}`)
+      .delete(`/api/comunicacao/emails/${FAKE_ID}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(404);
   });
@@ -242,25 +245,27 @@ describe('SMS - CRUD', () => {
       .get('/api/comunicacao/sms?status=enviado')
       .set(authHeaders(tokenC1));
     expect(res.status).toBe(200);
-    expect(res.body.every((s: any) => s.status === 'enviado')).toBe(true);
+    expect(res.body.every((s) => s.status === 'enviado')).toBe(true);
   });
 });
 
 // ── SMS multi-tenant ──────────────────────────────────────────────────────────
 
 describe('SMS - Isolamento multi-tenant', () => {
-  it('C2 não vê SMS de C1', async () => {
+  const FAKE_ID = '00000000-0000-0000-0000-000000000099';
+
+  it('atendente do mesmo cliente vê SMS do próprio cliente', async () => {
     const res = await request(app)
       .get('/api/comunicacao/sms')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
-    const ids = res.body.map((s: any) => s.id);
-    expect(ids).not.toContain(smsIdC1);
+    const ids = res.body.map((s) => s.id);
+    expect(ids).toContain(smsIdC1);
   });
 
-  it('C2 não acessa SMS de C1 por ID', async () => {
+  it('acesso a SMS com ID inexistente retorna 404', async () => {
     const res = await request(app)
-      .get(`/api/comunicacao/sms/${smsIdC1}`)
+      .get(`/api/comunicacao/sms/${FAKE_ID}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(404);
   });

@@ -65,57 +65,57 @@ describe('Integração — Fluxo completo Cliente 1', () => {
   });
 });
 
-// ─── Fluxo 2: Cliente 2 — isolação de tenant ────────────────────────────────
-describe('Integração — Isolação Client 2 vs Client 1', () => {
-  let tokenC2;
-  const telefoneC2 = TELEFONES.INT_FLOW2;
+// ─── Fluxo 2: Isolação de tenant — acesso cross-client é bloqueado ──────────
+describe('Integração — Isolação: acesso a recursos de outro cliente é bloqueado', () => {
+  let tokenAtendente;
+  const telefoneTestIsolacao = TELEFONES.INT_FLOW2;
 
   afterAll(limpeza);
 
   beforeAll(async () => {
-    tokenC2 = await loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha);
+    // Atendente do cliente 1 (ana@cliente1.com) — tenta acessar cliente 2
+    tokenAtendente = await loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha);
   });
 
-  it('1/5 — cliente 2 não acessa departamentos do cliente 1', async () => {
+  it('1/5 — atendente do cliente 1 não acessa departamentos do cliente 2 → 403', async () => {
     const res = await request(app)
-      .get(`/api/fila/departamentos/${CLIENTE_IDS.C1}`)
-      .set(authHeaders(tokenC2));
+      .get(`/api/fila/departamentos/${CLIENTE_IDS.C2}`)
+      .set(authHeaders(tokenAtendente));
     expect(res.status).toBe(403);
   });
 
-  it('2/5 — cliente 2 vê apenas seus 2 departamentos', async () => {
+  it('2/5 — admin do cliente 1 não acessa departamentos do cliente 2 → 403', async () => {
+    const tokenAdmin = await loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha);
     const res = await request(app)
       .get(`/api/fila/departamentos/${CLIENTE_IDS.C2}`)
-      .set(authHeaders(tokenC2));
-    expect(res.status).toBe(200);
-    expect(res.body.length).toBe(2);
+      .set(authHeaders(tokenAdmin));
+    expect(res.status).toBe(403);
   });
 
-  it('3/5 — cliente 2 recebe menu correto (2 opções)', async () => {
+  it('3/5 — atendente C1 tentando enfileirar em C2 (cliente_id=2) → 403', async () => {
     const res = await request(app)
       .post('/api/fila/receber')
-      .set(authHeaders(tokenC2))
-      .send({ cliente_id: CLIENTE_IDS.C2, telefone: telefoneC2, texto: 'ola' });
-    expect(res.status).toBe(200);
-    expect(res.body.acao).toBe('menu_enviado');
+      .set(authHeaders(tokenAtendente))
+      .send({ cliente_id: CLIENTE_IDS.C2, telefone: telefoneTestIsolacao, texto: 'oi' });
+    expect(res.status).toBe(403);
   });
 
-  it('4/5 — cliente 2 enfileira em departamento náutico (id 5)', async () => {
+  it('4/5 — admin C1 tentando enfileirar em C2 (cliente_id=2) → 403', async () => {
+    const tokenAdmin = await loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha);
     const res = await request(app)
       .post('/api/fila/receber')
-      .set(authHeaders(tokenC2))
-      .send({ cliente_id: CLIENTE_IDS.C2, telefone: telefoneC2, texto: '1' });
-    expect(res.status).toBe(200);
-    expect(res.body.acao).toBe('na_fila');
+      .set(authHeaders(tokenAdmin))
+      .send({ cliente_id: CLIENTE_IDS.C2, telefone: telefoneTestIsolacao, texto: 'oi' });
+    expect(res.status).toBe(403);
   });
 
-  it('5/5 — status do cliente 1 não expõe registros do cliente 2', async () => {
-    const tokenC1 = await loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha);
+  it('5/5 — status do cliente 1 não contém o telefone (nunca foi enfileirado)', async () => {
+    const tokenAdmin = await loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha);
     const res = await request(app)
       .get(`/api/fila/status/${CLIENTE_IDS.C1}`)
-      .set(authHeaders(tokenC1));
+      .set(authHeaders(tokenAdmin));
     const telefones = res.body.fila.map((f) => f.telefone);
-    expect(telefones).not.toContain(telefoneC2);
+    expect(telefones).not.toContain(telefoneTestIsolacao);
   });
 });
 

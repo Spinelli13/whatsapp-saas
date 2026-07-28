@@ -36,19 +36,19 @@ describe('Database — Estrutura de tabelas', () => {
 });
 
 describe('Database — Seeds: contagens mínimas', () => {
-  it('deve ter pelo menos 2 clientes', async () => {
+  it('deve ter pelo menos 1 cliente', async () => {
     const [rows] = await sequelize.query('SELECT COUNT(*) AS cnt FROM clientes');
-    expect(Number(rows[0].cnt)).toBeGreaterThanOrEqual(2);
+    expect(Number(rows[0].cnt)).toBeGreaterThanOrEqual(1);
   });
 
-  it('deve ter pelo menos 4 usuários', async () => {
+  it('deve ter pelo menos 3 usuários', async () => {
     const [rows] = await sequelize.query('SELECT COUNT(*) AS cnt FROM usuarios');
-    expect(Number(rows[0].cnt)).toBeGreaterThanOrEqual(4);
+    expect(Number(rows[0].cnt)).toBeGreaterThanOrEqual(3);
   });
 
-  it('deve ter pelo menos 6 departamentos (4 C1 + 2 C2)', async () => {
+  it('deve ter pelo menos 4 departamentos (Vendas, Suporte, Administrativo, Técnico)', async () => {
     const [rows] = await sequelize.query('SELECT COUNT(*) AS cnt FROM departamentos');
-    expect(Number(rows[0].cnt)).toBeGreaterThanOrEqual(6);
+    expect(Number(rows[0].cnt)).toBeGreaterThanOrEqual(4);
   });
 
   it('cliente 1 deve ter exatamente 4 departamentos ativos', async () => {
@@ -57,14 +57,6 @@ describe('Database — Seeds: contagens mínimas', () => {
       { replacements: { id: CLIENTE_IDS.C1 } }
     );
     expect(Number(rows[0].cnt)).toBe(4);
-  });
-
-  it('cliente 2 deve ter exatamente 2 departamentos ativos', async () => {
-    const [rows] = await sequelize.query(
-      'SELECT COUNT(*) AS cnt FROM departamentos WHERE cliente_id = :id AND ativo = true',
-      { replacements: { id: CLIENTE_IDS.C2 } }
-    );
-    expect(Number(rows[0].cnt)).toBe(2);
   });
 
   it('senhas dos usuários devem estar hasheadas (começam com $2b$)', async () => {

@@ -6,12 +6,12 @@ const { sequelize } = require('../src/backend/models');
 const { loginUser, authHeaders } = require('./helpers/auth.helper');
 const { CREDENTIALS, CLIENTE_IDS } = require('./constants');
 
-let tokenC1, tokenC2;
+let tokenC1, tokenAtendente;
 
 beforeAll(async () => {
-  [tokenC1, tokenC2] = await Promise.all([
+  [tokenC1, tokenAtendente] = await Promise.all([
     loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
-    loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
+    loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha),
   ]);
 });
 
@@ -69,13 +69,13 @@ describe('GET /api/planos/meu-plano', () => {
     expect(res.body.Plano).toHaveProperty('nome');
   });
 
-  it('retorna plano ativo do cliente 2', async () => {
+  it('atendente do mesmo cliente também retorna plano ativo do cliente 1', async () => {
     const res = await request(app)
       .get('/api/planos/meu-plano')
-      .set(authHeaders(tokenC2));
+      .set(authHeaders(tokenAtendente));
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('cliente_id', CLIENTE_IDS.C2);
+    expect(res.body).toHaveProperty('cliente_id', CLIENTE_IDS.C1);
   });
 });
 
@@ -154,7 +154,7 @@ describe('Limite de mensagens — POST /api/fila/receber', () => {
   afterAll(async () => {
     await sequelize.query(
       `DELETE FROM uso_cliente WHERE cliente_id = :cid AND mes_ano = :mes`,
-      { replacements: { cid: CLIENTE_IDS.C2, mes: mesAtual } }
+      { replacements: { cid: CLIENTE_IDS.C1, mes: mesAtual } }
     );
     // Limpar telefones criados nesse describe
     await sequelize.query(
@@ -163,22 +163,22 @@ describe('Limite de mensagens — POST /api/fila/receber', () => {
   });
 
   it('bloqueia POST /receber com 402 quando limite atingido', async () => {
-    // Inserir/atualizar registro de uso ao limite do plano básico (1000 msg)
+    // Inserir/atualizar registro de uso acima de qualquer plano (999999 msg)
     await sequelize.query(`
       INSERT INTO uso_cliente (cliente_id, mes_ano, mensagens_usadas, usuarios_criados, departamentos_criados, criado_em)
-      VALUES (:cid, :mes, 1000, 0, 0, NOW())
+      VALUES (:cid, :mes, 999999, 0, 0, NOW())
       ON CONFLICT DO NOTHING
-    `, { replacements: { cid: CLIENTE_IDS.C2, mes: mesAtual } });
+    `, { replacements: { cid: CLIENTE_IDS.C1, mes: mesAtual } });
 
     await sequelize.query(`
-      UPDATE uso_cliente SET mensagens_usadas = 1000
+      UPDATE uso_cliente SET mensagens_usadas = 999999
       WHERE cliente_id = :cid AND mes_ano = :mes
-    `, { replacements: { cid: CLIENTE_IDS.C2, mes: mesAtual } });
+    `, { replacements: { cid: CLIENTE_IDS.C1, mes: mesAtual } });
 
     const res = await request(app)
       .post('/api/fila/receber')
-      .set(authHeaders(tokenC2))
-      .send({ cliente_id: CLIENTE_IDS.C2, telefone: '5585999000001', texto: 'oi' });
+      .set(authHeaders(tokenAtendente))
+      .send({ cliente_id: CLIENTE_IDS.C1, telefone: '5585999000001', texto: 'oi' });
 
     expect(res.status).toBe(402);
     expect(res.body).toHaveProperty('error');
@@ -190,12 +190,12 @@ describe('Limite de mensagens — POST /api/fila/receber', () => {
 
 describe('Limite de usuários — POST /api/usuarios', () => {
   const mesAtual = new Date().toISOString().substring(0, 7);
-  const emailTeste = `limite_test_${Date.now()}@barcos.com`;
+  const emailTeste = `limite_test_${Date.now()}@cliente1.com`;
 
   afterAll(async () => {
     await sequelize.query(
       `DELETE FROM uso_cliente WHERE cliente_id = :cid AND mes_ano = :mes`,
-      { replacements: { cid: CLIENTE_IDS.C2, mes: mesAtual } }
+      { replacements: { cid: CLIENTE_IDS.C1, mes: mesAtual } }
     );
     await sequelize.query(
       `DELETE FROM usuarios WHERE email = :email`,
@@ -206,18 +206,18 @@ describe('Limite de usuários — POST /api/usuarios', () => {
   it('bloqueia criação com 402 quando limite de usuários atingido', async () => {
     await sequelize.query(`
       INSERT INTO uso_cliente (cliente_id, mes_ano, mensagens_usadas, usuarios_criados, departamentos_criados, criado_em)
-      VALUES (:cid, :mes, 0, 1, 0, NOW())
+      VALUES (:cid, :mes, 0, 999999, 0, NOW())
       ON CONFLICT DO NOTHING
-    `, { replacements: { cid: CLIENTE_IDS.C2, mes: mesAtual } });
+    `, { replacements: { cid: CLIENTE_IDS.C1, mes: mesAtual } });
 
     await sequelize.query(`
-      UPDATE uso_cliente SET usuarios_criados = 1
+      UPDATE uso_cliente SET usuarios_criados = 999999
       WHERE cliente_id = :cid AND mes_ano = :mes
-    `, { replacements: { cid: CLIENTE_IDS.C2, mes: mesAtual } });
+    `, { replacements: { cid: CLIENTE_IDS.C1, mes: mesAtual } });
 
     const res = await request(app)
       .post('/api/usuarios')
-      .set(authHeaders(tokenC2))
+      .set(authHeaders(tokenC1))
       .send({ nome: 'Teste Limite', email: emailTeste, senha: 'password123' });
 
     expect(res.status).toBe(402);

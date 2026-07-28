@@ -76,25 +76,25 @@ class FilaAtendimentoService {
 
   /**
    * Encaminha atendimento para vendas criando uma Oportunidade no pipeline.
-   * Usa o primeiro estágio ativo do pipeline do cliente.
+   * usuarioId vem do JWT do usuário logado (nunca null).
    */
-  static async encaminharVenda(atendimentoId, clienteId, dadosVenda = {}) {
+  static async encaminharVenda(atendimentoId, usuarioId, clienteId, dadosVenda = {}) {
     const atendimento = await Atendimento.findOne({ where: { id: atendimentoId, cliente_id: clienteId } });
     if (!atendimento) return null;
 
     const estagio = await EstagioPipeline.findOne({
-      where: { cliente_id: clienteId, ativo: true },
+      where: { cliente_id: clienteId },
       order: [['ordem', 'ASC']],
     });
 
     const oportunidade = await Oportunidade.create({
-      cliente_id: clienteId,
-      titulo:     dadosVenda.titulo || `Lead WhatsApp — ${atendimento.numero_whatsapp}`,
-      valor:      dadosVenda.valor  || 0,
-      estagio_id: estagio?.id,
-      usuario_id: atendimento.usuario_id,
-      status:     'aberta',
-      descricao:  `Encaminhado do atendimento WhatsApp ${atendimento.numero_whatsapp}`,
+      cliente_id:     clienteId,
+      titulo:         dadosVenda.titulo || `Lead WhatsApp — ${atendimento.numero_whatsapp}`,
+      descricao:      `Número: ${atendimento.numero_whatsapp}\nNome: ${atendimento.nome_cliente || ''}`,
+      valor:          dadosVenda.valor != null ? Number(dadosVenda.valor) : 0,
+      estagio_id:     estagio ? estagio.id : null,
+      usuario_id:     usuarioId,
+      status:         'aberta',
       posicao_coluna: 0,
     });
 

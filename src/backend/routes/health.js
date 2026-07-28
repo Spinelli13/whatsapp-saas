@@ -37,7 +37,7 @@ router.get('/health', async (req, res) => {
   const allOk = checks.database !== 'error' && checks.redis !== 'error';
 
   res.status(allOk ? 200 : 503).json({
-    status: allOk ? 'up' : 'degraded',
+    status: allOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
     version: process.env.VERSION || '1.0.0',
@@ -49,9 +49,9 @@ router.get('/health', async (req, res) => {
 router.get('/health/ready', async (req, res) => {
   try {
     await sequelize.authenticate();
-    res.json({ ready: true, database: 'connected' });
+    res.json({ status: 'ready', ready: true, database: 'connected' });
   } catch (err) {
-    res.status(503).json({ ready: false, database: 'disconnected', error: err.message });
+    res.status(503).json({ status: 'degraded', ready: false, database: 'disconnected', error: err.message });
   }
 });
 

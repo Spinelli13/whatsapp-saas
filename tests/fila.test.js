@@ -10,12 +10,14 @@ const {
 } = require('./constants');
 const { loginUser, authHeaders } = require('./helpers/auth.helper');
 
+// tokenC1 = admin@cliente1.com   (admin do cliente 1)
+// tokenC2 = ana@cliente1.com     (atendente do cliente 1 — mesmo tenant)
 let tokenC1, tokenC2;
 
 beforeAll(async () => {
   [tokenC1, tokenC2] = await Promise.all([
-    loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
-    loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
+    loginUser(CREDENTIALS.ADMIN_C1.email,     CREDENTIALS.ADMIN_C1.senha),
+    loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha),
   ]);
 });
 
@@ -54,13 +56,13 @@ describe('Fila — GET /api/fila/departamentos/:cliente_id', () => {
     expect(res.body.length).toBe(4);
   });
 
-  it('cliente 2 deve receber 2 departamentos', async () => {
+  it('atendente do mesmo cliente vê os departamentos do cliente 1', async () => {
     const res = await request(app)
-      .get(`/api/fila/departamentos/${CLIENTE_IDS.C2}`)
+      .get(`/api/fila/departamentos/${CLIENTE_IDS.C1}`)
       .set(authHeaders(tokenC2));
 
     expect(res.status).toBe(200);
-    expect(res.body.length).toBe(2);
+    expect(res.body.length).toBe(4);
   });
 
   it('departamentos devem ter campos id e nome', async () => {
@@ -130,11 +132,12 @@ describe('Fila — POST /api/fila/receber (menu)', () => {
     expect(res.body.acao).toBe('menu_reenviado');
   });
 
-  it('cliente_id errado no body → 403', async () => {
+  it('cliente_id de outro tenant no body → 403', async () => {
+    // tokenC2 pertence ao cliente 1; enviar cliente_id=2 deve ser rejeitado
     const res = await request(app)
       .post('/api/fila/receber')
       .set(authHeaders(tokenC2))
-      .send({ cliente_id: CLIENTE_IDS.C1, telefone: TELEFONES.SEC_1, texto: 'oi' });
+      .send({ cliente_id: CLIENTE_IDS.C2, telefone: TELEFONES.SEC_1, texto: 'oi' });
     expect(res.status).toBe(403);
   });
 });
@@ -218,11 +221,11 @@ describe('Fila — Ticket: Histórico', () => {
     expect(acoes).toContain('criado');
   });
 
-  it('cliente 2 não acessa histórico de ticket do cliente 1 → 403', async () => {
+  it('atendente do mesmo cliente pode acessar histórico → 200', async () => {
     const res = await request(app)
       .get(`/api/fila/tickets/${ticketId}/historico`)
       .set(authHeaders(tokenC2));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it('ticket inexistente → 404', async () => {
@@ -311,12 +314,12 @@ describe('Fila — Ticket: Notas', () => {
     expect(res.status).toBe(400);
   });
 
-  it('cliente 2 não adiciona nota em ticket do cliente 1 → 403', async () => {
+  it('atendente do mesmo cliente pode adicionar nota → 201', async () => {
     const res = await request(app)
       .post(`/api/fila/tickets/${ticketId}/notas`)
       .set(authHeaders(tokenC2))
-      .send({ conteudo: 'Tentativa de injeção indevida.' });
-    expect(res.status).toBe(403);
+      .send({ conteudo: 'Nota do atendente ao ticket.' });
+    expect(res.status).toBe(201);
   });
 
   it('nota em ticket inexistente → 404', async () => {
@@ -397,12 +400,12 @@ describe('Fila — Ticket: Status', () => {
     expect(acoes).toContain('status_alterado');
   });
 
-  it('cliente 2 não altera status de ticket do cliente 1 → 403', async () => {
+  it('atendente do mesmo cliente pode alterar status → 200', async () => {
     const res = await request(app)
       .put(`/api/fila/tickets/${ticketId}/status`)
       .set(authHeaders(tokenC2))
       .send({ status: 'resolvido' });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 });
 
@@ -480,11 +483,11 @@ describe('Fila — Ticket: Satisfação', () => {
     expect(acoes).toContain('rating_adicionado');
   });
 
-  it('cliente 2 não avalia ticket do cliente 1 → 403', async () => {
+  it('atendente do mesmo cliente pode registrar satisfação → 200', async () => {
     const res = await request(app)
       .post(`/api/fila/tickets/${ticketId}/satisfacao`)
       .set(authHeaders(tokenC2))
       .send({ rating: 3 });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 });

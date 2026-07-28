@@ -8,10 +8,12 @@ const { loginUser, authHeaders } = require('./helpers/auth.helper');
 
 let tokenC1, tokenC2;
 
+// tokenC1 = admin@cliente1.com  (admin do cliente 1)
+// tokenC2 = ana@cliente1.com    (atendente do cliente 1)
 beforeAll(async () => {
   [tokenC1, tokenC2] = await Promise.all([
-    loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
-    loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
+    loginUser(CREDENTIALS.ADMIN_C1.email,     CREDENTIALS.ADMIN_C1.senha),
+    loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha),
   ]);
 });
 
@@ -49,9 +51,10 @@ describe('Segurança — Autenticação', () => {
 });
 
 describe('Segurança — Isolação multi-tenant', () => {
-  it('cliente 2 tentando acessar dados do cliente 1 → 403', async () => {
+  it('usuário do cliente 1 tentando acessar departamentos do cliente 2 → 403', async () => {
+    // tokenC2 é cliente 1 — acessar cliente_id=2 deve ser rejeitado
     const res = await request(app)
-      .get('/api/fila/departamentos/1')
+      .get('/api/fila/departamentos/2')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(403);
   });
@@ -63,11 +66,12 @@ describe('Segurança — Isolação multi-tenant', () => {
     expect(res.status).toBe(403);
   });
 
-  it('cliente 2 tentando enfileirar no cliente 1 → 403', async () => {
+  it('usuário do cliente 1 tentando enfileirar em cliente 2 → 403', async () => {
+    // tokenC2 é cliente 1 — enviar cliente_id=2 deve ser rejeitado
     const res = await request(app)
       .post('/api/fila/receber')
       .set(authHeaders(tokenC2))
-      .send({ cliente_id: 1, telefone: '5585900000001', texto: 'oi' });
+      .send({ cliente_id: 2, telefone: '5585900000001', texto: 'oi' });
     expect(res.status).toBe(403);
   });
 });

@@ -96,7 +96,7 @@ router.post('/:id/dados', async (req, res, next) => {
 router.post('/:id/encaminhar', async (req, res, next) => {
   try {
     const oportunidade = await FilaAtendimentoService.encaminharVenda(
-      req.params.id, req.usuario.cliente_id, req.body
+      req.params.id, req.usuario.id, req.usuario.cliente_id, req.body
     );
     if (!oportunidade) return res.status(404).json({ error: 'Atendimento não encontrado' });
     res.status(201).json(oportunidade);

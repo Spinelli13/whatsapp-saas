@@ -19,8 +19,8 @@ router.get('/metricas/diarias', async (req, res, next) => {
     }
     const metricas = await AnalyticsService.obterMetricasVendas(
       req.usuario.cliente_id,
-      new Date(dataInicio),
-      new Date(dataFim)
+      dataInicio,
+      dataFim
     );
     res.json(metricas);
   } catch (err) {

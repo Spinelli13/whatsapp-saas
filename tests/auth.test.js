@@ -21,13 +21,14 @@ describe('Auth — POST /api/auth/login', () => {
     expect(res.body.usuario).not.toHaveProperty('senha');
   });
 
-  it('deve fazer login com credenciais corretas (cliente 2)', async () => {
+  it('deve fazer login com credenciais corretas (atendente)', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send(CREDENTIALS.ADMIN_C2);
+      .send(CREDENTIALS.ATENDENTE_C1);
 
     expect(res.status).toBe(200);
-    expect(res.body.usuario.cliente_id).toBe(CLIENTE_IDS.C2);
+    expect(res.body.usuario.cliente_id).toBe(CLIENTE_IDS.C1);
+    expect(res.body.usuario.role).toBe('atendente');
   });
 
   it('deve rejeitar senha incorreta → 401', async () => {
@@ -78,15 +79,18 @@ describe('Auth — POST /api/auth/login', () => {
     expect(decoded.exp - decoded.iat).toBeGreaterThan(23 * 3600);
   });
 
-  it('tokens de clientes diferentes devem ter cliente_ids diferentes', async () => {
+  it('admin e atendente do mesmo cliente têm o mesmo cliente_id no token', async () => {
     const [res1, res2] = await Promise.all([
       request(app).post('/api/auth/login').send(CREDENTIALS.ADMIN_C1),
-      request(app).post('/api/auth/login').send(CREDENTIALS.ADMIN_C2),
+      request(app).post('/api/auth/login').send(CREDENTIALS.ATENDENTE_C1),
     ]);
 
     const d1 = jwt.decode(res1.body.token);
     const d2 = jwt.decode(res2.body.token);
-    expect(d1.cliente_id).not.toBe(d2.cliente_id);
+    expect(d1.cliente_id).toBe(CLIENTE_IDS.C1);
+    expect(d2.cliente_id).toBe(CLIENTE_IDS.C1);
+    expect(d1.role).toBe('admin');
+    expect(d2.role).toBe('atendente');
   });
 });
 

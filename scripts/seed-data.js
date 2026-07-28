@@ -11,6 +11,7 @@ const {
   sequelize,
   Cliente,
   Usuario,
+  Departamento,
   EstagioPipeline,
   Oportunidade,
   Tarefa,
@@ -92,7 +93,97 @@ async function seed() {
   const ana = usuarios['ana@cliente1.com'];
   const joao = usuarios['admin@cliente1.com'];
 
-  // ── 3. Estágios de Pipeline ──────────────────────────────────────────────────
+  // ── 2a. RBAC: Permissões, Roles e Role_Permissões ────────────────────────────
+  logSection('2a. RBAC');
+
+  // Permissões com IDs fixos (id=5 deve ser 'fila.reabrir' — usado nos testes)
+  await sequelize.query(`
+    INSERT INTO permissoes (id, nome, categoria, descricao, criado_em) VALUES
+      (1, 'fila.visualizar',        'fila',           'Ver fila de atendimento',         NOW()),
+      (2, 'fila.responder',         'fila',           'Responder mensagens na fila',      NOW()),
+      (3, 'fila.fechar',            'fila',           'Fechar tickets',                   NOW()),
+      (4, 'notas.criar',            'notas',          'Criar notas em tickets',           NOW()),
+      (5, 'fila.reabrir',           'fila',           'Reabrir tickets fechados',         NOW()),
+      (6, 'configuracoes.permissoes','configuracoes', 'Gerenciar permissões e roles',     NOW()),
+      (7, 'usuarios.gerenciar_roles','usuarios',      'Atribuir roles a usuários',        NOW())
+    ON CONFLICT (id) DO NOTHING
+  `);
+  await sequelize.query(`SELECT setval('permissoes_id_seq', 7, true)`);
+  log('✅', '7 permissões garantidas (fila, notas, configuracoes, usuarios)');
+
+  // Roles com IDs fixos para cliente 1 (id=1..4)
+  await sequelize.query(`
+    INSERT INTO roles (id, nome, descricao, cliente_id, eh_customizado, criado_em) VALUES
+      (1, 'admin',       'Administrador com todas as permissões',  1, false, NOW()),
+      (2, 'atendente',   'Atendente com acesso à fila e notas',    1, false, NOW()),
+      (3, 'vendedor',    'Vendedor com acesso limitado',           1, false, NOW()),
+      (4, 'visualizador','Apenas visualização da fila',            1, false, NOW())
+    ON CONFLICT (id) DO NOTHING
+  `);
+  await sequelize.query(`SELECT setval('roles_id_seq', 4, true)`);
+  log('✅', '4 roles garantidas para cliente 1 (admin=1, atendente=2, vendedor=3, visualizador=4)');
+
+  // Junção role_permissoes: deletar e recriar para roles 1-4
+  await sequelize.query(`DELETE FROM role_permissoes WHERE role_id IN (1,2,3,4)`);
+  await sequelize.query(`
+    INSERT INTO role_permissoes (role_id, permissao_id, criado_em) VALUES
+      (1,1,NOW()),(1,2,NOW()),(1,3,NOW()),(1,4,NOW()),(1,5,NOW()),(1,6,NOW()),(1,7,NOW()),
+      (2,1,NOW()),(2,2,NOW()),(2,3,NOW()),(2,4,NOW()),
+      (3,1,NOW()),(3,2,NOW()),
+      (4,1,NOW())
+  `);
+  log('✅', 'Permissões atribuídas: admin=todas, atendente=fila+notas, vendedor=fila, visualizador=fila.visualizar');
+
+  // ── 2b. Planos + cliente_plano ───────────────────────────────────────────────
+  logSection('2b. PLANOS');
+
+  // Usar raw SQL para garantir IDs fixos (1=Básico, 2=Profissional, 3=Enterprise)
+  await sequelize.query(`
+    INSERT INTO planos (id, nome, descricao, preco_mensal, usuarios_limite, mensagens_limite, departamentos_limite, features, criado_em)
+    VALUES
+      (1, 'Básico',        'Plano inicial para pequenos negócios',     99.90,  5,   1000,  3,  '[]',                        NOW()),
+      (2, 'Profissional',  'Plano completo para médios negócios',     199.90, 20,   5000, 10,  '["crm"]',                   NOW()),
+      (3, 'Enterprise',    'Plano ilimitado para grandes empresas',   499.90, 100, 50000, 50,  '["crm","ia","analytics"]',  NOW())
+    ON CONFLICT (id) DO NOTHING
+  `);
+  // Atualizar a sequence para não conflitar em inserts futuros
+  await sequelize.query(`SELECT setval('planos_id_seq', 3, true)`);
+
+  log('✅', '3 planos garantidos (Básico id=1, Profissional id=2, Enterprise id=3)');
+
+  // ClientePlano: associar cliente 1 ao plano Profissional (ativo)
+  const [[cpExistente]] = await sequelize.query(
+    `SELECT id FROM cliente_plano WHERE cliente_id = 1 AND status = 'ativo' LIMIT 1`
+  );
+  if (!cpExistente) {
+    await sequelize.query(`
+      INSERT INTO cliente_plano (cliente_id, plano_id, status, data_inicio, data_proxima_renovacao, criado_em)
+      VALUES (1, 2, 'ativo', NOW(), NOW() + INTERVAL '30 days', NOW())
+    `);
+    log('✅', 'Cliente 1 associado ao plano Profissional');
+  } else {
+    log('⚠️ ', 'Cliente 1 já possui plano ativo');
+  }
+
+  // ── 3. Departamentos ─────────────────────────────────────────────────────────
+  logSection('3. DEPARTAMENTOS');
+
+  const deptosData = [
+    { nome: 'Vendas' },
+    { nome: 'Suporte' },
+    { nome: 'Administrativo' },
+    { nome: 'Técnico' },
+  ];
+
+  for (const d of deptosData) {
+    const [depto, criado] = await Departamento.findOrCreate({
+      where: { cliente_id: cliente.id, nome: d.nome },
+      defaults: { cliente_id: cliente.id, nome: d.nome, ativo: true },
+    });
+    log(criado ? '✅' : '⚠️ ', `Departamento "${depto.nome}" (ID: ${depto.id})${criado ? ' — criado' : ' — já existia'}`);
+  }
+
+  // ── 4. Estágios de Pipeline ──────────────────────────────────────────────────
   logSection('3. ESTÁGIOS PIPELINE');
 
   const estagiosData = [
@@ -114,7 +205,7 @@ async function seed() {
     log(criado ? '✅' : '⚠️ ', `Estágio "${e.nome}"${criado ? ' — criado' : ' — já existia'}`);
   }
 
-  // ── 4. Oportunidades ─────────────────────────────────────────────────────────
+  // ── 5. Oportunidades ─────────────────────────────────────────────────────────
   logSection('4. OPORTUNIDADES');
 
   // Vencimento: agosto de 2026
@@ -177,7 +268,7 @@ async function seed() {
     );
   }
 
-  // ── 5. Tarefas ───────────────────────────────────────────────────────────────
+  // ── 6. Tarefas ───────────────────────────────────────────────────────────────
   logSection('5. TAREFAS');
 
   // Tarefa.status enum: 'todo' | 'em_progresso' | 'concluida'
@@ -224,7 +315,7 @@ async function seed() {
     );
   }
 
-  // ── 6. Resumo ────────────────────────────────────────────────────────────────
+  // ── 7. Resumo ────────────────────────────────────────────────────────────────
   logSection('CREDENCIAIS DE ACESSO');
 
   console.log('\n  📱  Acesse o sistema com:\n');

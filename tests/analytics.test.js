@@ -18,9 +18,10 @@ beforeAll(async () => {
   await sequelize.query(`DELETE FROM analise_sentimento WHERE cliente_id IN (1,2)`);
   await sequelize.query(`DELETE FROM metricas_vendas WHERE cliente_id IN (1,2)`);
 
+  // tokenC2 = ana@cliente1.com (atendente do mesmo cliente)
   [tokenC1, tokenC2] = await Promise.all([
-    loginUser(CREDENTIALS.ADMIN_C1.email, CREDENTIALS.ADMIN_C1.senha),
-    loginUser(CREDENTIALS.ADMIN_C2.email, CREDENTIALS.ADMIN_C2.senha),
+    loginUser(CREDENTIALS.ADMIN_C1.email,     CREDENTIALS.ADMIN_C1.senha),
+    loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha),
   ]);
 });
 
@@ -122,12 +123,12 @@ describe('Métricas - Listar', () => {
     expect(res.body.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('GET /api/analytics/metricas/diarias só retorna dados do cliente', async () => {
+  it('atendente do mesmo cliente vê as mesmas métricas do próprio cliente', async () => {
     const res = await request(app)
       .get(`/api/analytics/metricas/diarias?dataInicio=${mes30}&dataFim=${hoje}`)
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
-    expect(res.body.every((m) => m.cliente_id === 2)).toBe(true);
+    expect(res.body.every((m) => m.cliente_id === 1)).toBe(true);
   });
 });
 
@@ -256,12 +257,12 @@ describe('Sentimento - Histórico', () => {
     expect(res.body.every((a) => a.sentimento === 'positivo')).toBe(true);
   });
 
-  it('C2 não vê sentimentos de C1', async () => {
+  it('atendente do mesmo cliente vê sentimentos do próprio cliente', async () => {
     const res = await request(app)
       .get('/api/analytics/sentimento/historico')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
-    expect(res.body.every((a) => a.cliente_id === 2)).toBe(true);
+    expect(res.body.every((a) => a.cliente_id === 1)).toBe(true);
   });
 });
 
@@ -276,7 +277,7 @@ describe('IA - Previsões', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('GET /ia/previsoes retorna só do cliente', async () => {
+  it('atendente do mesmo cliente vê previsões do próprio cliente', async () => {
     const res = await request(app)
       .get('/api/analytics/ia/previsoes')
       .set(authHeaders(tokenC2));
@@ -343,13 +344,22 @@ describe('IA - Recomendações CRUD', () => {
     expect(res.body[0].id).toBe(recomIdC1);
   });
 
-  it('C2 não vê recomendações de C1', async () => {
+  it('atendente do mesmo cliente pode criar e ver suas próprias recomendações', async () => {
+    // Atendente cria sua própria recomendação
+    const criarRes = await request(app)
+      .post('/api/analytics/ia/recomendacoes')
+      .set(authHeaders(tokenC2))
+      .send({ titulo: 'Recom atendente', descricao: 'Acompanhar lead pendente', tipo: 'proximo_passo' });
+    expect(criarRes.status).toBe(201);
+    const recomIdC2 = criarRes.body.id;
+
+    // Atendente lista as suas recomendações (filtrado por usuario_id)
     const res = await request(app)
       .get('/api/analytics/ia/recomendacoes')
       .set(authHeaders(tokenC2));
     expect(res.status).toBe(200);
     const ids = res.body.map((r) => r.id);
-    expect(ids).not.toContain(recomIdC1);
+    expect(ids).toContain(recomIdC2);
   });
 });
 
@@ -361,11 +371,18 @@ describe('IA - Marcar Visualizado', () => {
     expect(res.status).toBe(404);
   });
 
-  it('C2 não marca recomendação de C1 como visualizada', async () => {
+  it('atendente do mesmo cliente pode marcar recomendação como visualizada → 200', async () => {
+    // Criar nova recomendação para este teste evitar interferir com o fluxo principal
+    const criarRes = await request(app)
+      .post('/api/analytics/ia/recomendacoes')
+      .set(authHeaders(tokenC1))
+      .send({ titulo: 'Recom para atendente', descricao: 'Teste de acesso por atendente' });
+    const recomExtra = criarRes.body.id;
+
     const res = await request(app)
-      .post(`/api/analytics/ia/recomendacoes/${recomIdC1}/visualizado`)
+      .post(`/api/analytics/ia/recomendacoes/${recomExtra}/visualizado`)
       .set(authHeaders(tokenC2));
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(200);
   });
 
   it('POST /ia/recomendacoes/:id/visualizado marca como visualizado', async () => {
