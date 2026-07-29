@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   BarChart3, MessageCircle, Shield, Lock, CreditCard,
-  Users, LogOut, FileText, TrendingUp, CheckSquare, CalendarDays, Send, Zap,
+  Users, LogOut, FileText, TrendingUp, CheckSquare, CalendarDays, Send, Zap, Smartphone,
 } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuth } from '../../hooks/useAuth';
@@ -96,6 +96,7 @@ export function Sidebar() {
                 <Divider isDark={isDark} />
                 <NavItem to="/configuracoes/usuarios" label="Permissões" Icon={Lock} isDark={isDark} />
                 <NavItem to="/configuracoes/planos" label="Planos" Icon={CreditCard} isDark={isDark} />
+                <NavItem to="/configuracoes/whatsapp" label="WhatsApp" Icon={Smartphone} isDark={isDark} />
               </>
             )}
           </>

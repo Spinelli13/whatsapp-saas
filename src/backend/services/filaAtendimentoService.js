@@ -59,6 +59,15 @@ class FilaAtendimentoService {
       timestamp: new Date(),
     });
     await atendimento.update({ ultima_mensagem: mensagem });
+
+    // Fire-and-forget: send via Baileys (silently skip if WhatsApp not connected)
+    if (atendimento.numero_whatsapp) {
+      const wa = require('./whatsappService');
+      wa.enviarMensagem(clienteId, atendimento.numero_whatsapp, mensagem).catch(err =>
+        console.warn(`[WA] Mensagem não enviada via WhatsApp: ${err.message}`)
+      );
+    }
+
     return msg;
   }
 

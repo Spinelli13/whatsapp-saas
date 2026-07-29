@@ -1,0 +1,349 @@
+⚠️ IMPORTANTE: LEIA ISTO ANTES DE COMEÇAR
+
+Claude Code, você está recebendo este prompt como parte de um projeto profissional.
+
+VOCÊ DEVE:
+1. Ler o arquivo: /mnt/user-data/outputs/INSTRUCOES_ESPECIAIS_CLAUDE_CODE.md
+2. Seguir TODAS as instruções de commits automáticos
+3. Atualizar documentação após cada tarefa
+4. Não deixar a sessão sem documentar progresso
+
+COMECE AGORA LENDO AQUELE ARQUIVO!
+
+═══════════════════════════════════════════════════════════════════════
+
+FASE 7.1: OPORTUNIDADES/VENDAS - BACKEND + FRONTEND COMPLETO
+
+CONTEXTO:
+- Projeto: WhatsApp SaaS CRM (173/173 testes, UI dark/light pronta, RBAC funcionando)
+- Objetivo: Adicionar gestão de vendas/oportunidades com pipeline visual Kanban
+- Stack: Node.js + Express + PostgreSQL + Sequelize + React + Vite + TypeScript + Tailwind
+- Duração: 2 semanas (40h backend + 40h frontend)
+- Arquivo principal: C:\Users\mathe\Desktop\whatsapp-saas
+- GitHub: https://github.com/Spinelli13/whatsapp-saas (branch: main)
+
+COMMITS ESPERADOS:
+[7.1-backend] Models + Services + Routes
+[7.1-frontend] Pages + Components + Integration  
+[7.1-final] Fase 1 completa com 45+ testes novos
+
+═══════════════════════════════════════════════════════════════════════
+
+PARTE 1: BACKEND - MIGRATIONS
+
+═════════════════════════════════════════════════════════════════════════
+
+Criar arquivo: src/backend/database/migrations/018-criar-tabelas-vendas.js
+
+'use strict'
+
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    // Tabela: estagios_pipeline (customizável por cliente)
+    await queryInterface.createTable('estagios_pipeline', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true
+      },
+      cliente_id: {
+        type: Sequelize.INTEGER,
+        references: { model: 'clientes', key: 'id' },
+        onDelete: 'CASCADE'
+      },
+      nome: Sequelize.STRING,
+      descricao: Sequelize.TEXT,
+      cor: Sequelize.STRING,
+      ordem: Sequelize.INTEGER,
+      ativo: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
+      },
+      criado_em: Sequelize.DATE,
+      atualizado_em: Sequelize.DATE
+    })
+
+    // Tabela: oportunidades
+    await queryInterface.createTable('oportunidades', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true
+      },
+      cliente_id: {
+        type: Sequelize.INTEGER,
+        references: { model: 'clientes', key: 'id' },
+        onDelete: 'CASCADE'
+      },
+      titulo: Sequelize.STRING,
+      descricao: Sequelize.TEXT,
+      valor: Sequelize.DECIMAL(15, 2),
+      estagio_id: {
+        type: Sequelize.UUID,
+        references: { model: 'estagios_pipeline', key: 'id' },
+        allowNull: true
+      },
+      contato_id: {
+        type: Sequelize.INTEGER,
+        references: { model: 'usuarios', key: 'id' },
+        allowNull: true
+      },
+      usuario_id: {
+        type: Sequelize.INTEGER,
+        references: { model: 'usuarios', key: 'id' }
+      },
+      probabilidade: {
+        type: Sequelize.INTEGER,
+        defaultValue: 50
+      },
+      data_fechamento_esperada: Sequelize.DATE,
+      data_fechamento_real: Sequelize.DATE,
+      status: {
+        type: Sequelize.ENUM('aberta', 'ganha', 'perdida', 'em_andamento'),
+        defaultValue: 'aberta'
+      },
+      motivo_perda: Sequelize.TEXT,
+      posicao_coluna: Sequelize.INTEGER,
+      criado_em: Sequelize.DATE,
+      atualizado_em: Sequelize.DATE
+    })
+
+    // Tabela: historico_oportunidade
+    await queryInterface.createTable('historico_oportunidade', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true
+      },
+      oportunidade_id: {
+        type: Sequelize.UUID,
+        references: { model: 'oportunidades', key: 'id' },
+        onDelete: 'CASCADE'
+      },
+      usuario_id: {
+        type: Sequelize.INTEGER,
+        references: { model: 'usuarios', key: 'id' }
+      },
+      acao: Sequelize.STRING,
+      campo_alterado: Sequelize.STRING,
+      valor_anterior: Sequelize.TEXT,
+      valor_novo: Sequelize.TEXT,
+      criado_em: Sequelize.DATE
+    })
+
+    // Tabela: configuracao_pipeline
+    await queryInterface.createTable('configuracao_pipeline', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true
+      },
+      cliente_id: {
+        type: Sequelize.INTEGER,
+        references: { model: 'clientes', key: 'id' },
+        onDelete: 'CASCADE'
+      },
+      moeda: {
+        type: Sequelize.STRING,
+        defaultValue: 'BRL'
+      },
+      dias_ciclo_vendas_esperado: {
+        type: Sequelize.INTEGER,
+        defaultValue: 30
+      },
+      mostrar_probabilidade: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
+      },
+      mostra_valor_esperado: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
+      },
+      criado_em: Sequelize.DATE,
+      atualizado_em: Sequelize.DATE
+    })
+  },
+
+  async down(queryInterface) {
+    await queryInterface.dropTable('configuracao_pipeline')
+    await queryInterface.dropTable('historico_oportunidade')
+    await queryInterface.dropTable('oportunidades')
+    await queryInterface.dropTable('estagios_pipeline')
+  }
+}
+
+═════════════════════════════════════════════════════════════════════════
+
+PARTE 2: BACKEND - MODELS
+
+═════════════════════════════════════════════════════════════════════════
+
+Criar: src/backend/models/EstagioPipeline.js
+
+const { DataTypes } = require('sequelize')
+
+module.exports = (sequelize) => {
+  const EstagioPipeline = sequelize.define('EstagioPipeline', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    cliente_id: DataTypes.INTEGER,
+    nome: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    descricao: DataTypes.TEXT,
+    cor: {
+      type: DataTypes.STRING,
+      defaultValue: '#3B82F6'
+    },
+    ordem: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    ativo: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
+  }, {
+    tableName: 'estagios_pipeline',
+    timestamps: true,
+    underscored: true
+  })
+
+  return EstagioPipeline
+}
+
+Criar: src/backend/models/Oportunidade.js
+
+const { DataTypes } = require('sequelize')
+
+module.exports = (sequelize) => {
+  const Oportunidade = sequelize.define('Oportunidade', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    cliente_id: DataTypes.INTEGER,
+    titulo: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    descricao: DataTypes.TEXT,
+    valor: {
+      type: DataTypes.DECIMAL(15, 2),
+      defaultValue: 0
+    },
+    estagio_id: DataTypes.UUID,
+    contato_id: DataTypes.INTEGER,
+    usuario_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    probabilidade: {
+      type: DataTypes.INTEGER,
+      defaultValue: 50
+    },
+    data_fechamento_esperada: DataTypes.DATE,
+    data_fechamento_real: DataTypes.DATE,
+    status: {
+      type: DataTypes.ENUM('aberta', 'ganha', 'perdida', 'em_andamento'),
+      defaultValue: 'aberta'
+    },
+    motivo_perda: DataTypes.TEXT,
+    posicao_coluna: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    }
+  }, {
+    tableName: 'oportunidades',
+    timestamps: true,
+    underscored: true
+  })
+
+  return Oportunidade
+}
+
+Criar: src/backend/models/HistoricoOportunidade.js
+
+const { DataTypes } = require('sequelize')
+
+module.exports = (sequelize) => {
+  const HistoricoOportunidade = sequelize.define('HistoricoOportunidade', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    oportunidade_id: DataTypes.UUID,
+    usuario_id: DataTypes.INTEGER,
+    acao: DataTypes.STRING,
+    campo_alterado: DataTypes.STRING,
+    valor_anterior: DataTypes.TEXT,
+    valor_novo: DataTypes.TEXT
+  }, {
+    tableName: 'historico_oportunidade',
+    timestamps: true,
+    underscored: true,
+    createdAt: 'criado_em',
+    updatedAt: false
+  })
+
+  return HistoricoOportunidade
+}
+
+[... resto do código igual ao anterior ...]
+
+═════════════════════════════════════════════════════════════════════════
+
+INSTRUÇÕES FINAIS IMPORTANTES
+
+═════════════════════════════════════════════════════════════════════════
+
+LEIA ISTO:
+
+1. Você recebeu instruções especiais em:
+   /mnt/user-data/outputs/INSTRUCOES_ESPECIAIS_CLAUDE_CODE.md
+   
+   VOCÊ DEVE SEGUIR 100% DAQUELAS INSTRUÇÕES!
+
+2. Commits que você DEVE fazer:
+   ✅ [7.1-backend] Models + Services + Routes
+   ✅ [7.1-frontend] Pages + Components + Integration
+   ✅ [7.1-final] Fase 1 completa: Oportunidades (45+ testes)
+
+3. Documentos que você DEVE atualizar:
+   ✅ DOCUMENTO_MASTER_ROADMAP_EXECUTIVO.md
+   ✅ LOG_PROGRESSO_FASE_1.md (criar se não existir)
+
+4. Nunca saia sem:
+   ✅ Todos os testes passando (220+)
+   ✅ Código sem erros
+   ✅ Commits feitos
+   ✅ Documentação atualizada
+
+5. Se algo der errado:
+   ❌ NÃO deixe incompleto
+   ❌ DOCUMENTE o problema
+   ❌ FAÇA commit do que foi feito
+   ❌ AVISE no log
+
+═════════════════════════════════════════════════════════════════════════
+
+COMECE AGORA!
+
+1. Leia INSTRUCOES_ESPECIAIS_CLAUDE_CODE.md (5 min)
+2. Comece com as Migrations (30 min)
+3. Depois Models (1h)
+4. Depois Services (2h)
+5. Depois Routes (1h)
+6. Depois Frontend (4h)
+7. Depois Testes (1h)
+8. Faça commit
+9. Atualize documentação
+10. ✅ PRONTO!
+
+═════════════════════════════════════════════════════════════════════════

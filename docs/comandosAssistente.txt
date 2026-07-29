@@ -1,0 +1,18 @@
+📋 COMO VAMOS NOS COMUNICAR
+Quando você começar uma sessão:
+Comecei agora - [HORA]
+Etapa: [número da fase]
+Exemplo: "Comecei agora - 14:30, Etapa FASE 1.1"
+Quando terminar uma sessão:
+Terminei - [HORA]
+Etapa: [até onde chegou]
+Status: [✅ Completo / 🟡 50% / ❌ Problema]
+Próxima: [qual fase vem depois]
+Se precisar de ajuda:
+Problema em: [descrição do erro]
+Código/erro: [copie a mensagem de erro]
+Etapa: [qual fase]
+Atualizações rápidas durante o dia:
+Pausa de 15 min - Etapa 1.3
+Continuando - Etapa 2.1
+Debugando erro X

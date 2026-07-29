@@ -21,6 +21,7 @@ const CalendarioPage = lazy(() => import('./pages/CalendarioPage'));
 const ComunicacaoPage = lazy(() => import('./pages/ComunicacaoPage'));
 const AutomacoesPage = lazy(() => import('./pages/AutomacoesPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const WhatsappConfigPage = lazy(() => import('./pages/WhatsappConfigPage'));
 
 function PageLoader() {
   return (
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/configuracoes/seguranca" element={<SecurityPage />} />
           <Route path="/configuracoes/usuarios" element={<PermissoesPage />} />
           <Route path="/configuracoes/planos" element={<PlanosPage />} />
+          <Route path="/configuracoes/whatsapp" element={<WhatsappConfigPage />} />
           <Route path="/atendimento" element={<AtendimentoPage />} />
           <Route path="/cliente" element={<ClientePage />} />
           <Route path="/vendas" element={<VendasPage />} />

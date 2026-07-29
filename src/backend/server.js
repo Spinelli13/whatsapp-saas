@@ -82,10 +82,28 @@ whatsappService.setIO(io);
 
 DataRetentionService.agendarCleanup();
 
+async function _autoReconectarWhatsapp() {
+  try {
+    const { WhatsappNumero } = require('./models');
+    const ativos = await WhatsappNumero.findAll({ where: { status: 'ativo' } });
+    for (const num of ativos) {
+      console.log(`[WA] Auto-reconectando cliente ${num.cliente_id}...`);
+      whatsappService.conectar(num.cliente_id).catch(err =>
+        console.error(`[WA] Falha ao reconectar cliente ${num.cliente_id}: ${err.message}`)
+      );
+    }
+  } catch (err) {
+    console.warn(`[WA] Auto-reconnect pulado: ${err.message}`);
+  }
+}
+
 async function start() {
   try {
     await sequelize.authenticate();
     console.log('Banco de dados conectado');
+    if (NODE_ENV !== 'test') {
+      _autoReconectarWhatsapp();
+    }
   } catch (err) {
     console.warn(`Banco indisponível: ${err.message}`);
   }

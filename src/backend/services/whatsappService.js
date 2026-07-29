@@ -4,6 +4,28 @@ const qrcode = require('qrcode');
 const config = require('../config/whatsapp');
 const filaService = require('./filaService');
 
+// Lazy-loaded to avoid circular deps at startup
+function getWhatsappNumero() {
+  return require('../models').WhatsappNumero;
+}
+
+async function _sincronizarStatus(clienteId, status, numero) {
+  try {
+    const WhatsappNumero = getWhatsappNumero();
+    const existing = await WhatsappNumero.findOne({ where: { cliente_id: clienteId } });
+    const payload = { status };
+    if (numero) payload.numero = numero;
+    if (status === 'ativo') payload.integrado_em = new Date();
+    if (existing) {
+      await existing.update(payload);
+    } else if (numero) {
+      await WhatsappNumero.create({ cliente_id: clienteId, numero, status });
+    }
+  } catch (err) {
+    console.error(`[WA] Erro ao sincronizar status no DB: ${err.message}`);
+  }
+}
+
 // Estado em memória por cliente_id
 // { socket, status, qr, qrBase64, reconnectAttempts, messages[] }
 const _clients = new Map();
@@ -101,6 +123,9 @@ async function conectar(clienteId) {
       client.reconnectAttempts = 0;
       _emit(clienteId, 'whatsapp:conectado', { clienteId });
       console.log(`[WA] Cliente ${clienteId} conectado`);
+
+      const numero = sock.user?.id?.replace(/@.+/, '') || null;
+      _sincronizarStatus(clienteId, 'ativo', numero);
     }
 
     if (connection === 'close') {
@@ -122,6 +147,7 @@ async function conectar(clienteId) {
       }
 
       if (loggedOut) {
+        _sincronizarStatus(clienteId, 'desconectado', null);
         desconectar(clienteId);
       }
     }
