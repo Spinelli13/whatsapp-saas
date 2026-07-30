@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Token is stored inside the Zustand persist blob, not as a standalone key.
 // Reading it from the right place avoids circular dep (authStore → auth.ts → client.ts).
-const PERSIST_KEY = 'whatsapp-saas-auth';
+const PERSIST_KEY = 'si-crm-auth';
 
 function getStoredToken(): string | null {
   try {

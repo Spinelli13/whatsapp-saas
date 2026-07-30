@@ -22,7 +22,7 @@ const transferenciaRoutes = require('./transferencia');
 const router = Router();
 
 router.get('/status', (req, res) => {
-  res.json({ api: 'WhatsApp SaaS', version: '1.0.0', status: 'ok' });
+  res.json({ api: 'SI-CRM', version: '1.0.0', status: 'ok' });
 });
 
 router.use('/auth', authRoutes);

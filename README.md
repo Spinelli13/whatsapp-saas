@@ -1,15 +1,29 @@
-# WhatsApp SaaS Multi-Tenant
+# SI-CRM
 
-SaaS de roteamento inteligente para WhatsApp com filas por departamento, multi-tenant e painel em tempo real.
+Plataforma profissional de CRM para WhatsApp, desenvolvida pela **Soluções Imediatas Tecnologia**.
 
-## Stack
+**Desenvolvido por:** Soluções Imediatas Tecnologia
 
-- **Backend:** Node.js + Express + Socket.io
-- **Banco:** PostgreSQL + Sequelize ORM
-- **Auth:** JWT + bcrypt
-- **WhatsApp:** Baileys (Fase 2)
-- **Frontend:** React + Tailwind (Fase 3)
-- **Deploy:** Render
+## Features
+
+- Gerenciamento de conversas WhatsApp em tempo real
+- Relatórios e analytics avançados
+- Chatbot inteligente com fluxos configuráveis
+- Roteamento automático de atendimentos por departamento
+- Notas internas e comunicação entre atendentes
+- Transferências inteligentes entre agentes
+- 566+ testes de cobertura
+- Segurança multi-tenant com isolação completa por cliente
+- Interface responsiva com suporte a tema claro/escuro
+
+## Stack Tecnológico
+
+- **Frontend:** React 18, Vite, TypeScript, Tailwind CSS
+- **Backend:** Node.js, Express, Sequelize ORM
+- **Database:** PostgreSQL
+- **Deploy:** Vercel (Frontend), Render (Backend), Supabase (Database)
+- **Real-time:** Socket.io
+- **Testes:** Jest (566+ testes)
 
 ## Início Rápido
 
@@ -26,72 +40,35 @@ npm run dev
 
 # 4. Testar health check
 curl http://localhost:3000/health
-# {"status":"ok","timestamp":"..."}
 ```
 
-## Testar Autenticação (sem banco)
+## Credenciais de Teste
 
-```bash
-# Login com usuário mock (dev only)
-curl -s -X POST http://localhost:3000/api/auth/login-mock \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@cliente1.com","senha":"password"}'
-
-# Validar token retornado
-TOKEN=<cole o token aqui>
-curl -s http://localhost:3000/api/auth/verify \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-Usuários mock: `admin@cliente1.com`, `atendente@cliente1.com`, `admin@barcos.com` — senha: `password`
+- `admin@cliente1.com` / `password123` — Admin cliente 1
+- `ana@cliente1.com` / `password123` — Atendente cliente 1
+- `admin@barcos.com` / `password123` — Admin cliente 2
 
 Ver [docs/TESTES.md](docs/TESTES.md) para guia completo de testes.
 
 ## Estrutura
 
 ```
-src/
-├── backend/
-│   ├── config/        # database.js, environment.js
-│   ├── middleware/    # auth.js, errorHandler.js
-│   ├── models/        # Cliente.js, Usuario.js
-│   ├── routes/        # auth.js, index.js
-│   ├── services/      # authService.js
-│   └── server.js
-└── frontend/
-    ├── admin/         # Painel admin (Fase 3)
-    └── cliente/       # Painel cliente (Fase 3)
-database/
-├── migrations/        # 001_create_clientes, 002_create_usuarios
-└── seeds/
+si-crm/
+├── src/
+│   ├── backend/       # Node.js/Express API
+│   └── frontend/      # React/Vite SPA
+├── database/
+│   └── migrations/    # Sequelize migrations
+├── tests/             # Jest test suites
+├── docs/              # Documentação
+└── docker-compose.yml
 ```
 
-## Endpoints
-
-| Método | Rota | Auth? | Descrição |
-|--------|------|-------|-----------|
-| GET | `/health` | Não | Health check |
-| GET | `/api/status` | Não | Status da API |
-| POST | `/api/auth/register` | Não | Criar usuário (requer banco) |
-| POST | `/api/auth/login` | Não | Login real (requer banco) |
-| POST | `/api/auth/login-mock` | Não | Login dev (sem banco) |
-| GET | `/api/auth/verify` | Sim | Validar JWT |
-
-## Com banco (Semana 2)
+## Scripts
 
 ```bash
-# Rodar migrations
-npm run db:migrate
-
-# Rodar seeds
-npm run db:seed
+npm test                 # Rodar testes (566+)
+npm run frontend:build   # Build do frontend
+npm run db:migrate       # Rodar migrations
+npm run db:seed          # Popular banco com seed data
 ```
-
-## Progresso
-
-- [x] Fase 1.1 - Setup inicial e estrutura
-- [x] Fase 1.2 - Servidor Express com middleware
-- [x] Fase 1.3 - Autenticação JWT multi-tenant
-- [ ] Fase 2 - PostgreSQL + WhatsApp Baileys + Fila
-- [ ] Fase 3 - Painéis React (admin + cliente)
-- [ ] Fase 4 - Deploy Render + testes com clientes reais

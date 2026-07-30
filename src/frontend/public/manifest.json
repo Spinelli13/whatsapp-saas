@@ -1,7 +1,7 @@
 {
-  "name": "WhatsApp SaaS CRM",
-  "short_name": "CRM",
-  "description": "Gerenciador de relacionamento com clientes profissional",
+  "name": "SI-CRM",
+  "short_name": "SI-CRM",
+  "description": "SI-CRM - Plataforma de CRM WhatsApp por Soluções Imediatas Tecnologia",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

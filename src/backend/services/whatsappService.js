@@ -99,7 +99,7 @@ async function conectar(clienteId) {
     auth: state,
     logger,
     printQRInTerminal: false,
-    browser: ['WhatsApp SaaS', 'Chrome', '1.0.0'],
+    browser: ['SI-CRM', 'Chrome', '1.0.0'],
     syncFullHistory: false,
     markOnlineOnConnect: false,
   });

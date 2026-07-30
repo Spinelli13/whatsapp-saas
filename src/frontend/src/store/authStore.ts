@@ -19,6 +19,6 @@ export const useAuthStore = create<AuthState>()(
       login: (token, usuario) => set({ token, usuario, isAuthenticated: true }),
       logout: () => set({ token: null, usuario: null, isAuthenticated: false }),
     }),
-    { name: 'whatsapp-saas-auth' }
+    { name: 'si-crm-auth' }
   )
 );

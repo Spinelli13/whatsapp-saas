@@ -15,8 +15,8 @@ const TwoFAService = {
   async setupTOTP(usuario_id) {
     const secretObj = speakeasy.generateSecret({
       length: 20,
-      name: `WhatsApp SaaS (${usuario_id})`,
-      issuer: 'WhatsApp SaaS CRM',
+      name: `SI-CRM (${usuario_id})`,
+      issuer: 'SI-CRM by Soluções Imediatas',
     });
 
     const qrCode = await QRCode.toDataURL(secretObj.otpauth_url);

@@ -1,7 +1,10 @@
 {
-  "name": "whatsapp-saas",
+  "name": "si-crm",
   "version": "1.0.0",
-  "description": "SaaS de roteamento inteligente para WhatsApp - Multi-tenant",
+  "description": "SI-CRM - Plataforma de CRM WhatsApp por Soluções Imediatas Tecnologia",
+  "author": "Soluções Imediatas Tecnologia",
+  "license": "MIT",
+  "keywords": ["crm", "whatsapp", "customer-relationship-management", "saas", "multi-tenant"],
   "main": "src/backend/server.js",
   "scripts": {
     "start": "node src/backend/server.js",
@@ -28,7 +31,7 @@
     "frontend:e2e:run": "npm run e2e:run --prefix src/frontend",
     "db:migrate:prod": "NODE_ENV=production sequelize-cli db:migrate",
     "build": "npm run frontend:build",
-    "build:docker": "docker build -t whatsapp-saas:latest ."
+    "build:docker": "docker build -t si-crm:latest ."
   },
   "engines": {
     "node": ">=18.0.0"

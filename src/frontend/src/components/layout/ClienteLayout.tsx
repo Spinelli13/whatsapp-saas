@@ -19,7 +19,7 @@ export function ClienteLayout({ children }: ClienteLayoutProps) {
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-slate-100 leading-none">WhatsApp SaaS</h1>
+              <h1 className="text-sm font-bold text-slate-100 leading-none">SI-CRM</h1>
               <p className="text-xs text-slate-500 mt-0.5">Cliente · {usuario?.email}</p>
             </div>
           </div>

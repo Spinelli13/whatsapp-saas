@@ -29,7 +29,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>CRM Mobile</Text>
-      <Text style={styles.subtitle}>WhatsApp SaaS</Text>
+      <Text style={styles.subtitle}>SI-CRM</Text>
 
       <TextInput
         style={styles.input}

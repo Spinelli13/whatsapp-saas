@@ -11,7 +11,7 @@ export function Header() {
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
           <MessageSquare className="h-4 w-4 text-white" />
         </div>
-        <span className="font-bold text-slate-100 text-sm tracking-tight">WhatsApp SaaS</span>
+        <span className="font-bold text-slate-100 text-sm tracking-tight">SI-CRM</span>
       </div>
 
       <div className="flex items-center gap-3">

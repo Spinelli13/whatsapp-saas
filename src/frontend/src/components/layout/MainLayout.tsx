@@ -27,7 +27,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <span className={`font-bold text-sm ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
-              WhatsApp SaaS
+              SI-CRM
             </span>
             <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${
               isDark ? 'bg-slate-800 text-cyan-400 border-slate-700' : 'bg-cyan-50 text-cyan-700 border-cyan-200'
