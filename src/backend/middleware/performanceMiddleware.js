@@ -25,6 +25,7 @@ const limiter = isTestEnv
       message: { erro: 'Muitas requisições, tente novamente mais tarde' },
       standardHeaders: true,
       legacyHeaders: false,
+      validate: { trustProxy: false },
     });
 
 // Per-authenticated-user rate limit: 60 req / min
@@ -38,6 +39,9 @@ const userLimiter = isTestEnv
       message: { erro: 'Limite de requisições por usuário atingido' },
       standardHeaders: true,
       legacyHeaders: false,
+      // keyGeneratorIpFallback: disabled because authenticated requests use user ID (not IP)
+      // and unauthenticated requests are skipped entirely via skip()
+      validate: { trustProxy: false, keyGeneratorIpFallback: false },
     });
 
 module.exports = { compressionMiddleware, limiter, userLimiter };

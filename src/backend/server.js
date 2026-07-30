@@ -35,6 +35,9 @@ const { addRequestHandlers, addErrorHandler } = require('./config/sentry');
 const app = express();
 const httpServer = http.createServer(app);
 
+// Trust Render/reverse-proxy headers so req.ip returns the real client IP
+app.set('trust proxy', 1);
+
 // Initialize Socket.io with JWT auth + tenant namespaces
 const io = initializeSocket(httpServer);
 
@@ -72,8 +75,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', routes);
 app.use('/', healthRouter);
+app.use('/api', healthRouter);
+app.use('/api', routes);
 
 addErrorHandler(app);
 app.use(errorHandler);
