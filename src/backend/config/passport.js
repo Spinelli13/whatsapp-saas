@@ -4,12 +4,12 @@ const passport = require('passport');
 const { Strategy: LocalStrategy } = require('passport-local');
 const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
 const bcrypt = require('bcryptjs');
-const { Usuario } = require('../models');
 
 // ── Local ──────────────────────────────────────────────────────────────────
 passport.use(
   new LocalStrategy({ usernameField: 'email', passwordField: 'senha' }, async (email, senha, done) => {
     try {
+      const { Usuario } = require('../models');
       const usuario = await Usuario.findOne({ where: { email } });
       if (!usuario || !(await bcrypt.compare(senha, usuario.senha))) {
         return done(null, false, { message: 'Credenciais inválidas' });
@@ -32,6 +32,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
+          const { Usuario } = require('../models');
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error('Email não disponível no perfil Google'));
 
@@ -74,6 +75,7 @@ if (MicrosoftStrategy && process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOF
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
+          const { Usuario } = require('../models');
           const email = profile.emails?.[0]?.value || profile._json?.mail;
           if (!email) return done(new Error('Email não disponível no perfil Microsoft'));
 
@@ -101,6 +103,7 @@ passport.serializeUser((usuario, done) => done(null, usuario.id));
 
 passport.deserializeUser(async (id, done) => {
   try {
+    const { Usuario } = require('../models');
     const usuario = await Usuario.findByPk(id);
     done(null, usuario);
   } catch (err) {

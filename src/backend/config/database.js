@@ -1,12 +1,13 @@
 require('dotenv').config();
 
 // Constrói DATABASE_URL a partir de vars individuais como fallback
+// Suporta tanto POSTGRES_* (padrão Docker/GitHub Actions) quanto DB_* (legado)
 const _buildUrl = () => {
-  const u = process.env.DB_USER || 'postgres';
-  const p = process.env.DB_PASSWORD || '';
-  const h = process.env.DB_HOST || 'localhost';
+  const u = process.env.POSTGRES_USER     || process.env.DB_USER     || 'postgres';
+  const p = process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || process.env.DB_PASS || 'postgres';
+  const h = process.env.DB_HOST || '127.0.0.1';
   const port = process.env.DB_PORT || 5432;
-  const db = process.env.DB_NAME || 'whatsapp_saas';
+  const db = process.env.POSTGRES_DB || process.env.DB_NAME || 'whatsapp_saas';
   return `postgresql://${u}:${p}@${h}:${port}/${db}`;
 };
 
