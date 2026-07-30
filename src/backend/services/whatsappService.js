@@ -173,6 +173,21 @@ async function conectar(clienteId) {
       // Roteamento para fila de departamentos
       if (mensagem.texto && mensagem.texto !== '[mídia]') {
         try {
+          // Chatbot / respostas automáticas — processa ANTES da fila
+          try {
+            const ChatbotService = require('./chatbotService');
+            const chatbotResult = await ChatbotService.procesarMensagem(clienteId, mensagem.de, mensagem.texto);
+            if (chatbotResult.resposta) {
+              await sock.sendMessage(mensagem.de, { text: chatbotResult.resposta });
+            }
+            if (chatbotResult.tipo === 'resposta_automatica' || chatbotResult.tipo === 'aguardando') {
+              // Bot respondeu completamente — não entra na fila
+              continue;
+            }
+          } catch (chatErr) {
+            console.warn(`[WA] Chatbot ignorado: ${chatErr.message}`);
+          }
+
           const resultado = filaService.receberMensagem(clienteId, mensagem.de, mensagem.texto);
 
           if (resultado.acao === 'enfileirado') {

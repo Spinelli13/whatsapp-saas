@@ -3,6 +3,7 @@ import { Sun, Moon, MessageSquare } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuth } from '../../hooks/useAuth';
+import StatusAtendenteToggle from '../ui/StatusAtendenteToggle';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -36,6 +37,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            <StatusAtendenteToggle />
             <span className={`text-sm hidden sm:inline ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               {usuario?.email}
             </span>

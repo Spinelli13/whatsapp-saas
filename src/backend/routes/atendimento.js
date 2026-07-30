@@ -5,6 +5,7 @@ const { verificarJWT } = require('../middleware/auth');
 const AtendimentoService = require('../services/atendimentoService');
 const FilaAtendimentoService = require('../services/filaAtendimentoService');
 const ChatbotService = require('../services/chatbotService');
+const NotaInternaService = require('../services/NotaInternaService');
 
 const router = Router();
 router.use(verificarJWT);
@@ -55,6 +56,41 @@ router.post('/chatbot/analisar', async (req, res, next) => {
     const { mensagem } = req.body;
     if (!mensagem) return res.status(400).json({ error: 'mensagem é obrigatória' });
     res.json(ChatbotService.analisar(mensagem));
+  } catch (err) { next(err); }
+});
+
+// ── Notas Internas ────────────────────────────────────────────────────────────
+// Rotas /nota/:id devem vir ANTES de /:id/* para que "nota" não seja capturado como :id
+
+router.get('/nota/:id', async (req, res, next) => {
+  try {
+    const nota = await NotaInternaService.obter(req.params.id);
+    res.json({ data: nota });
+  } catch (err) { next(err); }
+});
+
+router.delete('/nota/:id', async (req, res, next) => {
+  try {
+    const result = await NotaInternaService.deletar(req.params.id, req.usuario.id);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.get('/:atendimento_id/notas', async (req, res, next) => {
+  try {
+    const notas = await NotaInternaService.listar(req.params.atendimento_id);
+    res.json({ data: notas });
+  } catch (err) { next(err); }
+});
+
+router.post('/:atendimento_id/notas', async (req, res, next) => {
+  try {
+    const nota = await NotaInternaService.criar(
+      req.params.atendimento_id,
+      req.usuario.id,
+      { conteudo: req.body.conteudo }
+    );
+    res.status(201).json({ data: nota });
   } catch (err) { next(err); }
 });
 

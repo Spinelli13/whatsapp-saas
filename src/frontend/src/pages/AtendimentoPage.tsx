@@ -7,6 +7,12 @@ import { useThemeStore } from '../store/themeStore';
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../api/client';
 import { io, Socket } from 'socket.io-client';
+import RespostaRapidaDropdown from '../components/ui/RespostaRapidaDropdown';
+import { useRespostasRapidas } from '../hooks/useRespostasRapidas';
+import PainelNotasInternas from '../components/ui/PainelNotasInternas';
+import { BotaoTransferencia } from '../components/ui/BotaoTransferencia';
+import { PainelTransferenciasPendentes } from '../components/ui/PainelTransferenciasPendentes';
+import { useTransferencias } from '../hooks/useTransferencias';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -134,9 +140,13 @@ export default function AtendimentoPage() {
   const [feedback, setFeedback] = useState(0);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [atendentes, setAtendentes] = useState<{ id: number; nome: string; email: string; status_atendente?: string }[]>([]);
 
   const socketRef = useRef<Socket | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  const { respostas: respostasRapidas } = useRespostasRapidas();
+  const { pendentes, carregarPendentes, aceitar: aceitarTransferencia, rejeitar: rejeitarTransferencia } = useTransferencias();
 
   // ── Carregamento inicial ─────────────────────────────────────────────────────
 
@@ -169,6 +179,13 @@ export default function AtendimentoPage() {
   useEffect(() => {
     carregarFila();
     carregarDashboard();
+    carregarPendentes();
+    apiClient.get('/usuarios').then((r) => {
+      const lista = Array.isArray(r.data) ? r.data : (r.data?.data || []);
+      setAtendentes(lista.filter((u: { id: number }) => u.id !== usuario?.id));
+    }).catch(() => {});
+    const intervalo = setInterval(carregarPendentes, 30000);
+    return () => clearInterval(intervalo);
   }, [carregarFila, carregarDashboard]);
 
   // ── Socket.io em tempo real ───────────────────────────────────────────────────
@@ -352,6 +369,11 @@ export default function AtendimentoPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <BotaoTransferencia
+                    atendimentoId={atendimentoAtivo.id}
+                    atendentes={atendentes}
+                    onSucesso={carregarPendentes}
+                  />
                   <button
                     onClick={encaminharVenda}
                     className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 transition-colors"
@@ -407,12 +429,23 @@ export default function AtendimentoPage() {
 
               {/* Input de mensagem */}
               <div className={`px-4 py-3 border-t flex items-center gap-2 ${isDark ? 'border-slate-800' : 'border-gray-200'}`}>
+                <RespostaRapidaDropdown
+                  respostas={respostasRapidas}
+                  isDark={isDark}
+                  inputValue={texto}
+                  onSelect={(conteudo) => {
+                    const msg = conteudo
+                      .replace(/\{\{nome\}\}/g, atendimentoAtivo?.nome_cliente || atendimentoAtivo?.numero_whatsapp || '')
+                      .replace(/\{\{protocolo\}\}/g, atendimentoAtivo?.id || '');
+                    setTexto(msg);
+                  }}
+                />
                 <input
                   type="text"
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && enviarMensagem()}
-                  placeholder="Digite uma mensagem..."
+                  placeholder="Digite uma mensagem ou /atalho..."
                   className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all ${
                     isDark
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500'
@@ -443,7 +476,7 @@ export default function AtendimentoPage() {
           )}
         </div>
 
-        {/* ── Coluna 3: Métricas ──────────────────────────────────────────────── */}
+        {/* ── Coluna 3: Métricas + Notas Internas ────────────────────────────── */}
         <div className={`w-64 flex-shrink-0 border-l flex flex-col ${isDark ? 'border-slate-800' : 'border-gray-200'}`}>
           <div className={`px-4 py-3 border-b ${isDark ? 'border-slate-800' : 'border-gray-200'}`}>
             <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -451,7 +484,15 @@ export default function AtendimentoPage() {
             </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="overflow-y-auto p-4 space-y-3">
+            {pendentes.length > 0 && (
+              <PainelTransferenciasPendentes
+                pendentes={pendentes}
+                onAceitar={async (id) => { await aceitarTransferencia(id); carregarFila(); }}
+                onRejeitar={rejeitarTransferencia}
+              />
+            )}
+
             {dashboard ? (
               <>
                 {[
@@ -502,6 +543,14 @@ export default function AtendimentoPage() {
               </div>
             )}
           </div>
+
+          {/* Notas Internas — visível apenas quando há atendimento ativo */}
+          {atendimentoAtivo && (
+            <PainelNotasInternas
+              atendimentoId={atendimentoAtivo.id}
+              isDark={isDark}
+            />
+          )}
         </div>
 
       </div>

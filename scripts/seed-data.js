@@ -165,6 +165,69 @@ async function seed() {
     log('⚠️ ', 'Cliente 1 já possui plano ativo');
   }
 
+  // ── 2c. Tabela respostas_rapidas (criação idempotente) ───────────────────────
+  logSection('2c. RESPOSTAS RÁPIDAS — tabela');
+
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS respostas_rapidas (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      cliente_id INTEGER NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+      titulo VARCHAR(100) NOT NULL,
+      conteudo TEXT NOT NULL,
+      atalho VARCHAR(50),
+      ativo BOOLEAN NOT NULL DEFAULT true,
+      criado_em TIMESTAMPTZ DEFAULT NOW(),
+      atualizado_em TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await sequelize.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_respostas_rapidas_cliente_atalho
+      ON respostas_rapidas (cliente_id, atalho) WHERE atalho IS NOT NULL
+  `);
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_respostas_rapidas_cliente_id
+      ON respostas_rapidas (cliente_id)
+  `);
+  log('✅', 'Tabela respostas_rapidas garantida');
+
+  // Seed: 3 respostas rápidas demo para cliente 1
+  const { RespostaRapida } = require('../src/backend/models');
+  const respostasDemo = [
+    { titulo: 'Saudação inicial',   conteudo: 'Olá {{nome}}! 👋 Como posso ajudar você hoje?', atalho: '/ola' },
+    { titulo: 'Aguardar atendente', conteudo: 'Olá {{nome}}, vou verificar isso para você. Por favor, aguarde um momento! ⏳', atalho: '/aguarde' },
+    { titulo: 'Encerramento',       conteudo: 'Obrigado pelo contato, {{nome}}! Seu protocolo é {{protocolo}}. Qualquer dúvida estamos à disposição. 😊', atalho: '/tchau' },
+  ];
+  for (const r of respostasDemo) {
+    const [, criado] = await RespostaRapida.findOrCreate({
+      where: { cliente_id: cliente.id, atalho: r.atalho },
+      defaults: { ...r, cliente_id: cliente.id },
+    });
+    log(criado ? '✅' : '⚠️ ', `Resposta rápida "${r.titulo}" (${r.atalho})${criado ? ' — criada' : ' — já existia'}`);
+  }
+
+  // ── 2d. Tabela notas_internas (criação idempotente) ──────────────────────────
+  logSection('2d. NOTAS INTERNAS — tabela');
+
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS notas_internas (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      atendimento_id UUID NOT NULL REFERENCES atendimentos(id) ON DELETE CASCADE,
+      usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+      conteudo TEXT NOT NULL,
+      criado_em TIMESTAMPTZ DEFAULT NOW(),
+      atualizado_em TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_notas_internas_atendimento_id
+      ON notas_internas (atendimento_id)
+  `);
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_notas_internas_usuario_id
+      ON notas_internas (usuario_id)
+  `);
+  log('✅', 'Tabela notas_internas garantida');
+
   // ── 3. Departamentos ─────────────────────────────────────────────────────────
   logSection('3. DEPARTAMENTOS');
 

@@ -35,7 +35,8 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function WhatsappConfigPage() {
-  const { isDark } = useThemeStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const { usuario } = useAuthStore();
   const clienteId = usuario?.cliente_id;
 

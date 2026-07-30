@@ -47,6 +47,11 @@ Usuario.init(
       allowNull: false,
       defaultValue: 'ativo',
     },
+    status_atendente: {
+      type: DataTypes.ENUM('online', 'ausente', 'offline'),
+      defaultValue: 'offline',
+      allowNull: false,
+    },
   },
   {
     sequelize,

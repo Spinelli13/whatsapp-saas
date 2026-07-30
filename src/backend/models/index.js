@@ -44,6 +44,15 @@ const PrevisaoIA = require('./PrevisaoIA');
 const RecomendacaoIA = require('./RecomendacaoIA');
 const Atendimento = require('./Atendimento');
 const MessageQueue = require('./MessageQueue');
+const RespostaRapida = require('./RespostaRapida');
+const NotaInterna = require('./NotaInterna');
+const FluxoBot = require('./FluxoBot');
+const RespostaAutomatica = require('./RespostaAutomatica');
+const ConfiguracaoRoteamento = require('./ConfiguracaoRoteamento');
+const SkillAtendente = require('./SkillAtendente');
+const MetricaAtendimento = require('./MetricaAtendimento');
+const Avaliacao = require('./Avaliacao');
+const Transferencia = require('./Transferencia');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -201,6 +210,65 @@ ExecucaoWorkflow.belongsTo(Workflow,      { foreignKey: 'workflow_id',    as: 'w
 ExecucaoWorkflow.belongsTo(Oportunidade,  { foreignKey: 'oportunidade_id', as: 'oportunidade' });
 ExecucaoWorkflow.belongsTo(Tarefa,        { foreignKey: 'tarefa_id',       as: 'tarefa' });
 
+// ── FluxoBot / RespostaAutomatica associations ────────────────────────────────
+
+Cliente.hasMany(FluxoBot, { foreignKey: 'cliente_id', as: 'fluxosBots', onDelete: 'CASCADE' });
+FluxoBot.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+
+Cliente.hasMany(RespostaAutomatica, { foreignKey: 'cliente_id', as: 'respostasAutomaticas', onDelete: 'CASCADE' });
+RespostaAutomatica.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+
+// ── NotasInternas associations ─────────────────────────────────────────────────
+
+Atendimento.hasMany(NotaInterna, { foreignKey: 'atendimento_id', as: 'notasInternas', onDelete: 'CASCADE' });
+NotaInterna.belongsTo(Atendimento, { foreignKey: 'atendimento_id', as: 'atendimento' });
+NotaInterna.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'autor' });
+Usuario.hasMany(NotaInterna, { foreignKey: 'usuario_id', as: 'notasInternas', onDelete: 'CASCADE' });
+
+// ── RespostasRapidas associations ──────────────────────────────────────────────
+
+Cliente.hasMany(RespostaRapida, { foreignKey: 'cliente_id', as: 'respostasRapidas', onDelete: 'CASCADE' });
+RespostaRapida.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+
+// ── Métricas / Avaliações associations ────────────────────────────────────────
+
+Atendimento.hasOne(MetricaAtendimento, { foreignKey: 'atendimento_id', as: 'metrica',      onDelete: 'CASCADE' });
+MetricaAtendimento.belongsTo(Atendimento, { foreignKey: 'atendimento_id', as: 'atendimento' });
+MetricaAtendimento.belongsTo(Cliente,     { foreignKey: 'cliente_id',    as: 'cliente' });
+MetricaAtendimento.belongsTo(Usuario,     { foreignKey: 'usuario_id',    as: 'usuario' });
+MetricaAtendimento.belongsTo(Departamento,{ foreignKey: 'departamento_id', as: 'departamento' });
+Cliente.hasMany(MetricaAtendimento,  { foreignKey: 'cliente_id', as: 'metricasAtendimento', onDelete: 'CASCADE' });
+Usuario.hasMany(MetricaAtendimento,  { foreignKey: 'usuario_id', as: 'metricasAtendimento', onDelete: 'CASCADE' });
+
+Atendimento.hasOne(Avaliacao, { foreignKey: 'atendimento_id', as: 'avaliacao', onDelete: 'CASCADE' });
+Avaliacao.belongsTo(Atendimento, { foreignKey: 'atendimento_id', as: 'atendimento' });
+Avaliacao.belongsTo(Cliente,     { foreignKey: 'cliente_id',    as: 'cliente' });
+Avaliacao.belongsTo(Usuario,     { foreignKey: 'usuario_id',    as: 'usuario' });
+Cliente.hasMany(Avaliacao, { foreignKey: 'cliente_id', as: 'avaliacoes', onDelete: 'CASCADE' });
+
+// ── Transferências associations ───────────────────────────────────────────────
+
+Atendimento.hasMany(Transferencia, { foreignKey: 'atendimento_id', as: 'transferencias', onDelete: 'CASCADE' });
+Transferencia.belongsTo(Atendimento, { foreignKey: 'atendimento_id', as: 'atendimento' });
+Transferencia.belongsTo(Usuario, { foreignKey: 'atendente_origem_id',  as: 'origem' });
+Transferencia.belongsTo(Usuario, { foreignKey: 'atendente_destino_id', as: 'destino' });
+Transferencia.belongsTo(Departamento, { foreignKey: 'departamento_destino_id', as: 'departamentoDestino' });
+Usuario.hasMany(Transferencia, { foreignKey: 'atendente_origem_id',  as: 'transferenciasEnviadas',  onDelete: 'CASCADE' });
+Usuario.hasMany(Transferencia, { foreignKey: 'atendente_destino_id', as: 'transferenciasRecebidas', onDelete: 'CASCADE' });
+Cliente.hasMany(Transferencia, { foreignKey: 'cliente_id', as: 'transferencias', onDelete: 'CASCADE' });
+Transferencia.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+
+// ── Roteamento associations ────────────────────────────────────────────────────
+
+Cliente.hasMany(ConfiguracaoRoteamento, { foreignKey: 'cliente_id', as: 'configRoteamento', onDelete: 'CASCADE' });
+ConfiguracaoRoteamento.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+
+Usuario.hasMany(SkillAtendente, { foreignKey: 'usuario_id', as: 'skills', onDelete: 'CASCADE' });
+SkillAtendente.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
+
+Cliente.hasMany(SkillAtendente, { foreignKey: 'cliente_id', as: 'skillsCliente', onDelete: 'CASCADE' });
+SkillAtendente.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+
 // ── Atendimento / MessageQueue associations ────────────────────────────────────
 
 Cliente.hasMany(Atendimento,   { foreignKey: 'cliente_id',    as: 'atendimentos',  onDelete: 'CASCADE' });
@@ -273,4 +341,13 @@ module.exports = {
   RecomendacaoIA,
   Atendimento,
   MessageQueue,
+  RespostaRapida,
+  NotaInterna,
+  FluxoBot,
+  RespostaAutomatica,
+  ConfiguracaoRoteamento,
+  SkillAtendente,
+  MetricaAtendimento,
+  Avaliacao,
+  Transferencia,
 };

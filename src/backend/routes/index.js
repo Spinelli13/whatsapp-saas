@@ -12,6 +12,12 @@ const comunicacaoRoutes = require('./comunicacao');
 const automacoesRoutes = require('./automacoes');
 const analyticsRoutes = require('./analytics');
 const atendimentoRoutes = require('./atendimento');
+const respostasRapidasRoutes = require('./respostasRapidas');
+const statusRoutes = require('./status');
+const chatbotRoutes = require('./chatbot');
+const roteamentoRoutes = require('./roteamento');
+const relatorioRoutes = require('./relatorio');
+const transferenciaRoutes = require('./transferencia');
 
 const router = Router();
 
@@ -31,6 +37,12 @@ router.use('/comunicacao', comunicacaoRoutes);
 router.use('/automacoes', automacoesRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/atendimento', atendimentoRoutes);
+router.use('/respostas-rapidas', respostasRapidasRoutes);
+router.use('/atendente', statusRoutes);
+router.use('/chatbot', chatbotRoutes);
+router.use('/roteamento', roteamentoRoutes);
+router.use('/relatorio', relatorioRoutes);
+router.use('/transferencia', transferenciaRoutes);
 router.use('/', lgpdRoutes);
 
 module.exports = router;

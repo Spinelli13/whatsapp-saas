@@ -22,6 +22,10 @@ const ComunicacaoPage = lazy(() => import('./pages/ComunicacaoPage'));
 const AutomacoesPage = lazy(() => import('./pages/AutomacoesPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const WhatsappConfigPage = lazy(() => import('./pages/WhatsappConfigPage'));
+const RespostasRapidasPage = lazy(() => import('./pages/RespostasRapidasPage'));
+const ChatbotPage = lazy(() => import('./pages/ChatbotPage'));
+const RoteamentoPage = lazy(() => import('./pages/RoteamentoPage'));
+const RelatoriosPage = lazy(() => import('./pages/RelatoriosPage'));
 
 function PageLoader() {
   return (
@@ -66,6 +70,10 @@ export default function App() {
           <Route path="/configuracoes/usuarios" element={<PermissoesPage />} />
           <Route path="/configuracoes/planos" element={<PlanosPage />} />
           <Route path="/configuracoes/whatsapp" element={<WhatsappConfigPage />} />
+          <Route path="/configuracoes/respostas-rapidas" element={<RespostasRapidasPage />} />
+          <Route path="/configuracoes/chatbot" element={<ChatbotPage />} />
+          <Route path="/configuracoes/roteamento" element={<RoteamentoPage />} />
+          <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="/atendimento" element={<AtendimentoPage />} />
           <Route path="/cliente" element={<ClientePage />} />
           <Route path="/vendas" element={<VendasPage />} />

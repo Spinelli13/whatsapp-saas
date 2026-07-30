@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   BarChart3, MessageCircle, Shield, Lock, CreditCard,
-  Users, LogOut, FileText, TrendingUp, CheckSquare, CalendarDays, Send, Zap, Smartphone,
+  Users, LogOut, FileText, TrendingUp, CheckSquare, CalendarDays, Send, Zap, Smartphone, MessageSquare, Bot, GitBranch,
 } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuth } from '../../hooks/useAuth';
@@ -91,12 +91,16 @@ export function Sidebar() {
             <NavItem to="/comunicacao" label="Comunicação" Icon={Send} isDark={isDark} />
             <NavItem to="/automacoes" label="Automações" Icon={Zap} isDark={isDark} />
             <NavItem to="/analytics" label="Analytics" Icon={BarChart3} isDark={isDark} />
+            <NavItem to="/relatorios" label="Relatórios" Icon={BarChart3} isDark={isDark} />
             {isClientAdmin && (
               <>
                 <Divider isDark={isDark} />
                 <NavItem to="/configuracoes/usuarios" label="Permissões" Icon={Lock} isDark={isDark} />
                 <NavItem to="/configuracoes/planos" label="Planos" Icon={CreditCard} isDark={isDark} />
                 <NavItem to="/configuracoes/whatsapp" label="WhatsApp" Icon={Smartphone} isDark={isDark} />
+                <NavItem to="/configuracoes/respostas-rapidas" label="Rápidas" Icon={MessageSquare} isDark={isDark} />
+                <NavItem to="/configuracoes/chatbot" label="Chatbot" Icon={Bot} isDark={isDark} />
+                <NavItem to="/configuracoes/roteamento" label="Roteamento" Icon={GitBranch} isDark={isDark} />
               </>
             )}
           </>
