@@ -19,8 +19,11 @@ beforeAll(async () => {
   tokenAna   = await loginUser(CREDENTIALS.ATENDENTE_C1.email, CREDENTIALS.ATENDENTE_C1.senha);
   tokenBruno = await loginUser(BRUNO.email, BRUNO.senha);
 
-  // Garantir que Bruno esteja online para poder receber transferências
-  await sequelize.query(`UPDATE usuarios SET status_atendente = 'online' WHERE email = '${BRUNO.email}'`);
+  // Garantir que Ana e Bruno estejam online para poder receber transferências
+  // (status-atendente.test.js pode ter deixado Ana em offline/ausente)
+  await sequelize.query(
+    `UPDATE usuarios SET status_atendente = 'online' WHERE email IN ('${CREDENTIALS.ATENDENTE_C1.email}', '${BRUNO.email}') AND cliente_id = 1`
+  );
 
   // Criar um atendimento real
   const res = await request(app)
@@ -34,8 +37,9 @@ beforeAll(async () => {
 afterAll(async () => {
   await sequelize.query(`DELETE FROM transferencias WHERE atendimento_id IN (SELECT id FROM atendimentos WHERE numero_whatsapp = '5585996001001')`);
   await sequelize.query(`DELETE FROM atendimentos WHERE numero_whatsapp = '5585996001001'`);
-  // Restaura status original do Bruno
+  // Restaura status original: Bruno offline (seed), Ana online (seed)
   await sequelize.query(`UPDATE usuarios SET status_atendente = 'offline' WHERE email = '${BRUNO.email}'`);
+  await sequelize.query(`UPDATE usuarios SET status_atendente = 'online' WHERE email = '${CREDENTIALS.ATENDENTE_C1.email}'`);
 });
 
 // ── Auth ─────────────────────────────────────────────────────────────────────

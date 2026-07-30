@@ -5,8 +5,8 @@ import { Transferencia } from '../../hooks/useTransferencias';
 
 interface PainelTransferenciasPendentesProps {
   pendentes: Transferencia[];
-  onAceitar: (id: string) => Promise<void>;
-  onRejeitar: (id: string, motivo?: string) => Promise<void>;
+  onAceitar: (id: string) => Promise<unknown>;
+  onRejeitar: (id: string, motivo?: string) => Promise<unknown>;
 }
 
 export function PainelTransferenciasPendentes({

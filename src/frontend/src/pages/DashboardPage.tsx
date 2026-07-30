@@ -9,7 +9,7 @@ import { HistoricoTimeline } from '../components/dashboard/HistoricoTimeline';
 
 export default function DashboardPage() {
   const { usuario } = useAuth();
-  const [ticketSelecionado, setTicketSelecionado] = useState<string | null>(null);
+  const [ticketSelecionado] = useState<string | null>(null);
 
   if (!usuario) return <Loading message="Carregando..." />;
 

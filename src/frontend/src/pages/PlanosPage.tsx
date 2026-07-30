@@ -44,7 +44,7 @@ function ProgressBar({ usado, limite, atingiu }: { usado: number; limite: number
 const PLANO_ICONS = [TrendingUp, Zap, CreditCard];
 
 export function PlanosPage() {
-  const _usuario = useAuthStore((s) => s.usuario);
+  useAuthStore((s) => s.usuario);
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
 

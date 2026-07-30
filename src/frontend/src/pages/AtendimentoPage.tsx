@@ -138,7 +138,7 @@ export default function AtendimentoPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [texto, setTexto] = useState('');
   const [feedback, setFeedback] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [atendentes, setAtendentes] = useState<{ id: number; nome: string; email: string; status_atendente?: string }[]>([]);
 
@@ -164,17 +164,6 @@ export default function AtendimentoPage() {
     } catch { /* silencioso */ }
   }, []);
 
-  const carregarMensagens = useCallback(async (id: string) => {
-    try {
-      const res = await apiClient.get(`/atendimento/status`);
-      const at = (res.data as Atendimento[]).find((a) => a.id === id);
-      if (at) {
-        const detail = await apiClient.get(`/atendimento/status?id=${id}`);
-        // fallback: se detalhe não vier, usa as mensagens do ativo
-        setMensagens((detail.data as Mensagem[]) || []);
-      }
-    } catch { /* silencioso */ }
-  }, []);
 
   useEffect(() => {
     carregarFila();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Play, Save, Zap } from 'lucide-react';
-import { useFluxosBot, FluxoBot } from '../hooks/useFluxosBot';
+import { useFluxosBot } from '../hooks/useFluxosBot';
 import { useThemeStore } from '../store/themeStore';
 import FlowEditorCanvas from '../components/ui/FlowEditorCanvas';
 
@@ -67,8 +67,6 @@ export default function ChatbotPage() {
     await deletar(id);
     if (fluxoSelecionado === id) setFluxoSelecionado(null);
   };
-
-  const cardBase = `rounded-xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200 shadow-sm'}`;
 
   return (
     <div className="flex flex-col h-full">

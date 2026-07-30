@@ -1,4 +1,4 @@
-import { MessageSquare, LogOut, ChevronDown } from 'lucide-react';
+import { MessageSquare, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
