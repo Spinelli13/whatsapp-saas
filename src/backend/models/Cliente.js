@@ -28,6 +28,20 @@ Cliente.init(
       allowNull: false,
       defaultValue: 'ativo',
     },
+    email: {
+      type: DataTypes.STRING(150),
+      allowNull: true,
+      unique: true,
+    },
+    cnpj: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      unique: true,
+    },
+    telefone: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
   },
   {
     sequelize,

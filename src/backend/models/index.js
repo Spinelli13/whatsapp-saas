@@ -53,6 +53,11 @@ const SkillAtendente = require('./SkillAtendente');
 const MetricaAtendimento = require('./MetricaAtendimento');
 const Avaliacao = require('./Avaliacao');
 const Transferencia = require('./Transferencia');
+const Modulo = require('./Modulo');
+const PlanosModulos = require('./PlanosModulos');
+const ClienteModulos = require('./ClienteModulos');
+const SolicitacaoUpgrade = require('./SolicitacaoUpgrade');
+const PermissaoModulo = require('./PermissaoModulo');
 
 // ── Associações base ───────────────────────────────────────────────────────
 
@@ -297,6 +302,32 @@ RecomendacaoIA.belongsTo(Cliente,   { foreignKey: 'cliente_id', as: 'cliente' })
 RecomendacaoIA.belongsTo(Usuario,   { foreignKey: 'usuario_id', as: 'usuario' });
 RecomendacaoIA.belongsTo(Oportunidade, { foreignKey: 'oportunidade_id', as: 'oportunidade' });
 
+// ── Módulos / Planos-Módulos / Cliente-Módulos associations ───────────────
+
+Plano.belongsToMany(Modulo, { through: PlanosModulos, foreignKey: 'plano_id', otherKey: 'modulo_id', as: 'modulos' });
+Modulo.belongsToMany(Plano, { through: PlanosModulos, foreignKey: 'modulo_id', otherKey: 'plano_id', as: 'planos' });
+Plano.hasMany(PlanosModulos, { foreignKey: 'plano_id', as: 'planosModulos', onDelete: 'CASCADE' });
+PlanosModulos.belongsTo(Plano,  { foreignKey: 'plano_id' });
+PlanosModulos.belongsTo(Modulo, { foreignKey: 'modulo_id' });
+
+Cliente.hasMany(ClienteModulos, { foreignKey: 'cliente_id', as: 'clienteModulos', onDelete: 'CASCADE' });
+ClienteModulos.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+ClienteModulos.belongsTo(Modulo,  { foreignKey: 'modulo_id' });
+
+// ── Solicitações de Upgrade associations ───────────────────────────────────
+
+Cliente.hasMany(SolicitacaoUpgrade, { foreignKey: 'cliente_id', as: 'solicitacoesUpgrade', onDelete: 'CASCADE' });
+SolicitacaoUpgrade.belongsTo(Cliente, { foreignKey: 'cliente_id', as: 'cliente' });
+SolicitacaoUpgrade.belongsTo(Usuario, { foreignKey: 'admin_id',   as: 'admin' });
+SolicitacaoUpgrade.belongsTo(Plano,   { foreignKey: 'plano_id',   as: 'plano' });
+SolicitacaoUpgrade.belongsTo(Modulo,  { foreignKey: 'modulo_id',  as: 'modulo' });
+
+// ── Permissões de módulo (por atendente) associations ──────────────────────
+
+Usuario.hasMany(PermissaoModulo, { foreignKey: 'usuario_id', as: 'permissoesModulo', onDelete: 'CASCADE' });
+PermissaoModulo.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
+PermissaoModulo.belongsTo(Modulo,  { foreignKey: 'modulo_id' });
+
 module.exports = {
   sequelize,
   Cliente,
@@ -350,4 +381,9 @@ module.exports = {
   MetricaAtendimento,
   Avaliacao,
   Transferencia,
+  Modulo,
+  PlanosModulos,
+  ClienteModulos,
+  SolicitacaoUpgrade,
+  PermissaoModulo,
 };

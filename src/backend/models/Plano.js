@@ -15,6 +15,11 @@ Plano.init(
     mensagens_limite: { type: DataTypes.INTEGER, allowNull: false },
     departamentos_limite: { type: DataTypes.INTEGER, allowNull: false },
     features: { type: DataTypes.JSONB, defaultValue: [] },
+    status: {
+      type: DataTypes.ENUM('ativo', 'inativo'),
+      allowNull: false,
+      defaultValue: 'ativo',
+    },
     criado_em: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   },
   {
