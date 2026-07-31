@@ -68,11 +68,14 @@ describe('Database — Seeds: contagens mínimas', () => {
 });
 
 describe('Database — Integridade referencial', () => {
-  it('todos os usuários devem ter cliente_id válido', async () => {
+  it('todos os usuários não-master devem ter cliente_id válido', async () => {
+    // role='master' é exceção intencional: é o dono do sistema, não
+    // pertence a nenhum cliente (migration 038 tornou cliente_id nullable
+    // especificamente para isso).
     const [rows] = await sequelize.query(`
       SELECT u.id FROM usuarios u
       LEFT JOIN clientes c ON c.id = u.cliente_id
-      WHERE c.id IS NULL
+      WHERE c.id IS NULL AND u.role != 'master'
     `);
     expect(rows.length).toBe(0);
   });

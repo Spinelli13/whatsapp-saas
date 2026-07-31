@@ -18,12 +18,18 @@ beforeAll(async () => {
 // ── Listar planos ─────────────────────────────────────────────────────────
 
 describe('GET /api/planos/disponibles', () => {
-  it('lista os 3 planos sem autenticação', async () => {
+  it('lista os planos sem autenticação, incluindo os 3 legados', async () => {
     const res = await request(app).get('/api/planos/disponibles');
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(3);
+    // >=3 em vez de ===3: o master/admin feature (ETAPA 5.6) semeia 2 planos
+    // adicionais (Básico/Pro) nesta mesma tabela, coexistindo com os 3
+    // planos legados (basico/profissional/enterprise) deste fixture.
+    expect(res.body.length).toBeGreaterThanOrEqual(3);
+    expect(res.body.map((p) => p.nome)).toEqual(
+      expect.arrayContaining(['basico', 'profissional', 'enterprise'])
+    );
   });
 
   it('inclui campos obrigatórios do plano', async () => {
