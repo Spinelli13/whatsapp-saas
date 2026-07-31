@@ -18,6 +18,8 @@ const chatbotRoutes = require('./chatbot');
 const roteamentoRoutes = require('./roteamento');
 const relatorioRoutes = require('./relatorio');
 const transferenciaRoutes = require('./transferencia');
+const masterRoutes = require('./master');
+const adminRoutes = require('./admin');
 
 const router = Router();
 
@@ -43,6 +45,8 @@ router.use('/chatbot', chatbotRoutes);
 router.use('/roteamento', roteamentoRoutes);
 router.use('/relatorio', relatorioRoutes);
 router.use('/transferencia', transferenciaRoutes);
+router.use('/master', masterRoutes);
+router.use('/admin', adminRoutes);
 router.use('/', lgpdRoutes);
 
 module.exports = router;
