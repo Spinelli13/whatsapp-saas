@@ -711,13 +711,23 @@ class MasterController {
         const dataProximaRenovacao = new Date();
         dataProximaRenovacao.setDate(dataProximaRenovacao.getDate() + 30);
 
-        await ClientePlano.create({
-          cliente_id: solicitacao.cliente_id,
-          plano_id: solicitacao.plano_id,
-          status: 'ativo',
-          data_proxima_renovacao: dataProximaRenovacao,
-          data_inicio: new Date(),
+        // (cliente_id, plano_id) is unique -- the client may be returning to a
+        // plan they had (and cancelled) before, so reuse the existing row
+        // instead of a blind create (same pattern as atribuirPlanoCliente).
+        const [clientePlanoAprovado, criadoAprovado] = await ClientePlano.findOrCreate({
+          where: { cliente_id: solicitacao.cliente_id, plano_id: solicitacao.plano_id },
+          defaults: {
+            status: 'ativo',
+            data_proxima_renovacao: dataProximaRenovacao,
+            data_inicio: new Date(),
+          },
         });
+
+        if (!criadoAprovado) {
+          clientePlanoAprovado.status = 'ativo';
+          clientePlanoAprovado.data_proxima_renovacao = dataProximaRenovacao;
+          await clientePlanoAprovado.save();
+        }
 
         const modulosPlano = await PlanosModulos.findAll({
           where: { plano_id: solicitacao.plano_id },

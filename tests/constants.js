@@ -9,6 +9,7 @@ module.exports = {
     ATENDENTE_C1:  { email: 'ana@cliente1.com',      senha: 'password123' },
     ADMIN_C2:      { email: 'admin@barcos.com',      senha: 'password123' },
     ATENDENTE_C2:  { email: 'carlos@barcos.com',     senha: 'password123' },
+    MASTER:        { email: 'sistemasimediatos',     senha: 'simaster13' },
   },
 
   CLIENTE_IDS: { C1: 1, C2: 2 },
