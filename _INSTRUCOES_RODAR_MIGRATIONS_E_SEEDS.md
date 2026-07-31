@@ -60,13 +60,16 @@ npm run db:migrate
 
 Esperado no output, em ordem:
 ```
+✅ 033_create_modulos_table.js
 ✅ 034_add_master_role_to_usuarios.js
 ✅ 035_create_cliente_modulos.js
 ✅ 036_create_planos_modulos.js
 ✅ 037_create_solicitacoes_upgrade.js
 ✅ 038_allow_null_cliente_id_usuarios.js
-✅ 039_create_modulos_table.js
 ```
+
+`033` roda antes de `035`/`036`/`037` porque essas migrations referenciam
+`modulos.id` via foreign key — a tabela precisa existir primeiro.
 
 ### 5️⃣ Rodar seeds (inserir dados)
 
@@ -121,7 +124,7 @@ Depois de rodar ambos os comandos, o banco terá:
 | Erro | Causa | Solução |
 |------|-------|---------|
 | `Database connect ECONNREFUSED` | DATABASE_URL incorreta/faltando | Verificar `.env`, checar se o host Supabase está acessível |
-| `relation 'modulos' does not exist` | Migration 039 não rodou | Rodar `npm run db:migrate` novamente |
+| `relation 'modulos' does not exist` | Migration 033 não rodou (ou está fora de ordem) | Confirmar que `033_create_modulos_table.js` roda antes de `035`/`036`/`037` |
 | `No modules found` | Seed 000 não rodou antes do 001 | Confirmar ordem: `000_populate_modulos.js` antes de `001_master_user.js` |
 | `Unique constraint violation on email` | Seed já rodou antes | `npm run db:seed:undo` depois `npm run db:seed` |
 | `Unexpected token` | Syntax error em migration | Rodar `node -c <arquivo>` para localizar |
