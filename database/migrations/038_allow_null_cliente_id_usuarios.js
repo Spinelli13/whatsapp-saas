@@ -10,29 +10,20 @@
  */
 
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
-    await queryInterface.changeColumn('usuarios', 'cliente_id', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'clientes',
-        key: 'id',
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
-    });
+  up: async (queryInterface) => {
+    // queryInterface.changeColumn() silently no-ops the NOT NULL toggle on
+    // this Postgres setup when combined with `references` in the same call
+    // (column stayed NOT NULL despite the migration recording as applied).
+    // Raw ALTER TABLE is unambiguous and matches how ALTER TYPE is done
+    // elsewhere in this migration set (e.g. 034).
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "usuarios" ALTER COLUMN "cliente_id" DROP NOT NULL;'
+    );
   },
 
-  down: async (queryInterface, Sequelize) => {
-    await queryInterface.changeColumn('usuarios', 'cliente_id', {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'clientes',
-        key: 'id',
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
-    });
+  down: async (queryInterface) => {
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "usuarios" ALTER COLUMN "cliente_id" SET NOT NULL;'
+    );
   },
 };
